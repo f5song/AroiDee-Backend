@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES6", // ใช้ ES6
+    "module": "CommonJS", // ใช้ module system แบบ CommonJS
+    "strict": true, // เปิดการตรวจสอบ type อย่างเคร่งครัด
+    "esModuleInterop": true, // รองรับการ import แบบ ES6
+    "outDir": "dist", // ไฟล์ compiled จะไปอยู่ในโฟลเดอร์ dist
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    } // ไฟล์ source อยู่ในโฟลเดอร์ src
+  },
+  "include": ["src"], // ไฟล์ที่ TypeScript จะ compile
+  "exclude": ["node_modules"] // ไฟล์ที่ TypeScript จะไม่สนใจ
+}
