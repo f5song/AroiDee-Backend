@@ -9,7 +9,7 @@ const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors({
-  origin: "https://aroi-dee-frontend.vercel.app", // ✅ แก้ให้ตรงกับ URL ของ Frontend ที่ Deploy แล้ว
+  origin: "https://aroi-dee-frontend.vercel.app",
   credentials: true
 }));
 
