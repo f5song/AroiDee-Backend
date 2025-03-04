@@ -1,39 +1,45 @@
 import { Request, Response } from "express";
-import * as recipeService from "../services/recipe.service";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 // ✅ POST /api/recipes - สร้างสูตรอาหารใหม่
 export const createRecipe = async (req: Request, res: Response) => {
   try {
-    const newRecipe = await recipeService.createRecipe(req.body);
+    const newRecipe = await prisma.recipes.create({
+      data: req.body, // ตรวจสอบให้แน่ใจว่า req.body มีค่าที่ถูกต้อง
+    });
+
     res.status(201).json({ success: true, data: newRecipe });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error creating recipe", error: error.message });
   }
 };
 
 // ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด
 export const getAllRecipes = async (_req: Request, res: Response) => {
   try {
-    const recipes = await recipeService.getAllRecipes();
+    const recipes = await prisma.recipes.findMany();
     res.json({ success: true, data: recipes });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error fetching recipes", error: error.message });
   }
 };
 
 // ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID
-export const getRecipeById = async (req: Request, res: Response): Promise<void> => {
+export const getRecipeById = async (req: Request, res: Response) => {
   try {
     const recipeId = Number(req.params.id);
     if (isNaN(recipeId)) {
-      res.status(400).json({ success: false, message: "Invalid recipe ID" });
-      return;
+      return res.status(400).json({ success: false, message: "Invalid recipe ID" });
     }
 
-    const recipe = await recipeService.getRecipeById(recipeId);
+    const recipe = await prisma.recipes.findUnique({
+      where: { id: recipeId },
+    });
+
     if (!recipe) {
-      res.status(404).json({ success: false, message: "Recipe not found" });
-      return;
+      return res.status(404).json({ success: false, message: "Recipe not found" });
     }
 
     res.status(200).json({ success: true, data: recipe });
@@ -42,39 +48,68 @@ export const getRecipeById = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-
 // ✅ GET /api/recipes/search?title=...&category=...&ingredient=...
 export const searchRecipes = async (req: Request, res: Response) => {
   try {
-    const filters = {
-      title: req.query.title ? String(req.query.title) : undefined,
-      category: req.query.category ? Number(req.query.category) : undefined,
-      ingredient: req.query.ingredient ? String(req.query.ingredient) : undefined,
-    };
+    const filters: any = {};
 
-    const recipes = await recipeService.searchRecipes(filters);
+    if (req.query.title) {
+      filters.title = { contains: String(req.query.title), mode: "insensitive" };
+    }
+    if (req.query.category) {
+      filters.category_id = Number(req.query.category);
+    }
+    if (req.query.ingredient) {
+      filters.recipe_ingredients = {
+        some: {
+          ingredients: {
+            name: { contains: String(req.query.ingredient), mode: "insensitive" },
+          },
+        },
+      };
+    }
+
+    const recipes = await prisma.recipes.findMany({
+      where: filters,
+      include: {
+        categories: true,
+        recipe_ingredients: {
+          include: {
+            ingredients: true,
+          },
+        },
+      },
+    });
+
     res.json({ success: true, data: recipes });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error searching recipes", error: error.message });
   }
 };
 
 // ✅ PUT /api/recipes/:id - อัปเดตข้อมูลสูตรอาหาร
 export const updateRecipe = async (req: Request, res: Response) => {
   try {
-    const updatedRecipe = await recipeService.updateRecipe(Number(req.params.id), req.body);
+    const updatedRecipe = await prisma.recipes.update({
+      where: { id: Number(req.params.id) },
+      data: req.body, // ตรวจสอบให้แน่ใจว่ามีค่าที่จะอัปเดต
+    });
+
     res.json({ success: true, data: updatedRecipe });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error updating recipe", error: error.message });
   }
 };
 
 // ✅ DELETE /api/recipes/:id - ลบสูตรอาหาร
 export const deleteRecipe = async (req: Request, res: Response) => {
   try {
-    await recipeService.deleteRecipe(Number(req.params.id));
+    await prisma.recipes.delete({
+      where: { id: Number(req.params.id) },
+    });
+
     res.json({ success: true, message: "Recipe deleted successfully" });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error deleting recipe", error: error.message });
   }
 };
