@@ -29,5 +29,16 @@ app.get("/api/db-test", async (req, res) => {
   }
 });
 
+app.get("/api/recipes", async (req, res) => {
+  try {
+    const recipes = await prisma.recipes.findMany();
+    res.json(recipes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch recipes" });
+  }
+});
+
+
 
 export default app;
