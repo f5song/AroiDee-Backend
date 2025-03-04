@@ -36,7 +36,7 @@ export const getAllShoppingLists = async (req: Request, res: Response) => {
 
     if (!userId || isNaN(userId)) {
       console.log("Invalid user ID:", req.query.user_id); // ✅ Debug log
-      return res.status(400).json({ success: false, message: "Invalid user ID" });
+      return res.status(400).json({ success: false, message: "Invalid user ID shoplist" });
     }
 
     const lists = await prisma.shopping_lists.findMany({
