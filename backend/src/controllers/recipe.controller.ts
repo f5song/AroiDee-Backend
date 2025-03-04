@@ -17,14 +17,17 @@ export const createRecipe = async (req: Request, res: Response) => {
 };
 
 // ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด
-export const getAllRecipes = async (_req: Request, res: Response) => {
+export const getAllRecipes = async (req: Request, res: Response) => {
   try {
+    console.log("Received request at /api/recipes", req.query);
     const recipes = await prisma.recipes.findMany();
-    res.json({ success: true, data: recipes });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: "Error fetching recipes", error: error.message });
+    res.json(recipes);
+  } catch (error) {
+    console.error("Error fetching recipes:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 // ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID
 export const getRecipeById = async (req: Request, res: Response) => {
