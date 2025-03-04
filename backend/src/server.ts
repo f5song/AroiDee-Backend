@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: "http://localhost:5173", // แก้เป็น frontend URL ที่ deploy แล้ว
+  origin: "https://aroi-dee-frontend.vercel.app/",
   credentials: true
 }));
 
