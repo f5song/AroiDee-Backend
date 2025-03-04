@@ -30,30 +30,27 @@ export const createShoppingList = async (req: Request, res: Response) => {
 // ✅ GET /api/shopping-lists - ดึงรายการซื้อของทั้งหมดของผู้ใช้
 export const getAllShoppingLists = async (req: Request, res: Response) => {
   try {
-    console.log("Received request at /api/shopping-lists", req.query); // ✅ Debug request
+    console.log("✅ Received request at /api/shopping-lists", req.query);
 
-    const userId = req.query.user_id ? Number(req.query.user_id) : null; // ✅ ป้องกัน undefined
+    const userId = req.query.user_id ? Number(req.query.user_id) : null;
 
     if (!userId || isNaN(userId)) {
-      console.log("Invalid user ID:", req.query.user_id); // ✅ Debug log
-      return res.status(400).json({ success: false, message: "Invalid user ID shoplist" });
+      console.log("❌ Invalid user ID shoplist:", req.query.user_id);
+      return res.json({ success: false, message: "No shopping lists found" }); // ✅ เปลี่ยนจาก error เป็น success=false
     }
 
     const lists = await prisma.shopping_lists.findMany({
       where: { user_id: userId },
-      include: {
-        shopping_list_items: {
-          include: { ingredients: true },
-        },
-      },
+      include: { shopping_list_items: { include: { ingredients: true } } },
     });
 
     res.json({ success: true, data: lists });
   } catch (error: any) {
-    console.error("Error fetching shopping lists:", error);
+    console.error("❌ Error fetching shopping lists:", error);
     res.status(500).json({ success: false, message: "Error fetching shopping lists", error: error.message });
   }
 };
+
 
 
 // ✅ GET /api/shopping-lists/:id - ดึงรายละเอียดของรายการซื้อของ

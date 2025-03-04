@@ -19,24 +19,22 @@ export const createRecipe = async (req: Request, res: Response) => {
 // ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
-    console.log("Received request at /api/recipes", req.query); // ✅ Debug request
+    console.log("✅ Request to /api/recipes");
 
-    // ✅ ดึงรายการสูตรอาหารทั้งหมด โดยไม่ต้องใช้ user ID
     const recipes = await prisma.recipes.findMany({
       include: {
         categories: true,
-        recipe_ingredients: {
-          include: { ingredients: true },
-        },
+        recipe_ingredients: { include: { ingredients: true } },
       },
     });
 
     res.json({ success: true, data: recipes });
-  } catch (error: any) {
-    console.error("Error fetching recipes:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch recipes", error: error.message });
+  } catch (error) {
+    console.error("❌ Error fetching recipes:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch recipes" });
   }
 };
+
 
 
 
