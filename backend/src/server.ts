@@ -34,8 +34,11 @@ app.get("/api/recipes", async (req, res) => {
     const recipes = await prisma.recipes.findMany();
     res.json(recipes);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch recipes" });
+    console.error("❌ Error fetching recipes:", (error as Error).message);
+    res.status(500).json({ 
+      error: "Failed to fetch recipes", 
+      details: (error as Error).message 
+    });
   }
 });
 
