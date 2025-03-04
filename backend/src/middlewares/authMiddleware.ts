@@ -6,16 +6,22 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
-export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const token = req.header("Authorization")?.split(" ")[1];
 
     if (!token) {
-      res.status(401).json({ message: "Not authorized, no token" });
+      res.status(401).json({ success: false, message: "Not authorized, no token" });
       return;
     }
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
+    console.log("Decoded Token:", decoded); // ✅ ตรวจสอบค่า JWT
+
+    if (!decoded || !decoded.id) {
+      res.status(401).json({ success: false, message: "Invalid token structure" });
+      return;
+    }
 
     const user = await prisma.users.findUnique({
       where: { id: decoded.id },
@@ -23,14 +29,15 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     });
 
     if (!user) {
-      res.status(401).json({ message: "User not found" });
+      res.status(401).json({ success: false, message: "User not found" });
       return;
     }
 
-    req.user = user; // ส่ง user ไปใน request object
+    req.user = user; // ✅ ส่ง user ไปใน request object
     next(); // ไป middleware ถัดไป
 
   } catch (error) {
-    res.status(401).json({ message: "Not authorized, token failed" });
+    console.error("JWT Error:", error);
+    res.status(401).json({ success: false, message: "Not authorized, token failed" });
   }
 };

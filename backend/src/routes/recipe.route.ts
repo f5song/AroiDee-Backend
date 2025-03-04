@@ -8,6 +8,7 @@ import {
   updateRecipe,
   deleteRecipe,
 } from "../controllers/recipe.controller";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
@@ -24,16 +25,13 @@ router.post(
 );
 
 // ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด
-router.get(
-  "/",
-  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      await getAllRecipes(req, res);
-    } catch (error) {
-      next(error);
-    }
-  })
-);
+router.get("/", authMiddleware, asyncHandler(async (req, res, next) => {
+  try {
+    await getAllRecipes(req, res);
+  } catch (error) {
+    next(error);
+  }
+}));
 
 // ✅ GET /api/recipes/search - ค้นหาสูตรอาหาร
 router.get(
