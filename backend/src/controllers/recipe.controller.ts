@@ -19,14 +19,25 @@ export const createRecipe = async (req: Request, res: Response) => {
 // ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
-    console.log("Received request at /api/recipes", req.query);
-    const recipes = await prisma.recipes.findMany();
-    res.json(recipes);
-  } catch (error) {
+    console.log("Received request at /api/recipes", req.query); // ✅ Debug request
+
+    // ✅ ดึงรายการสูตรอาหารทั้งหมด โดยไม่ต้องใช้ user ID
+    const recipes = await prisma.recipes.findMany({
+      include: {
+        categories: true,
+        recipe_ingredients: {
+          include: { ingredients: true },
+        },
+      },
+    });
+
+    res.json({ success: true, data: recipes });
+  } catch (error: any) {
     console.error("Error fetching recipes:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ success: false, message: "Failed to fetch recipes", error: error.message });
   }
 };
+
 
 
 // ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID
