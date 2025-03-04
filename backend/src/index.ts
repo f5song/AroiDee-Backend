@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 
-// สร้าง Express App
+
 const app = express();
 const PORT = 3000;
 
