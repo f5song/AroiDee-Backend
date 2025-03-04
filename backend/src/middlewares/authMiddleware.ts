@@ -16,7 +16,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     }
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
-    console.log("Decoded Token:", decoded); // ✅ ตรวจสอบค่า JWT
+    console.log("Decoded Token:", decoded);
 
     if (!decoded || !decoded.id) {
       res.status(401).json({ success: false, message: "Invalid token structure" });
@@ -25,7 +25,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 
     const user = await prisma.users.findUnique({
       where: { id: decoded.id },
-      select: { id: true, username: true, email: true }, // เลือกเฉพาะข้อมูลที่ต้องใช้
+      select: { id: true, username: true, email: true },
     });
 
     if (!user) {
@@ -33,9 +33,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       return;
     }
 
-    req.user = user; // ✅ ส่ง user ไปใน request object
-    next(); // ไป middleware ถัดไป
-
+    req.user = user;
+    next();
   } catch (error) {
     console.error("JWT Error:", error);
     res.status(401).json({ success: false, message: "Not authorized, token failed" });
