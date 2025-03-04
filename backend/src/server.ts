@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import categoriesRoutes from "./routes/categories.routes";
 
 dotenv.config();
 
@@ -14,6 +15,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use("/api/categories", categoriesRoutes);
+
+
 
 app.get("/api/test", (req, res) => {
   res.json({ message: "Backend Connected to Frontend with TypeScript!" });
@@ -28,20 +32,5 @@ app.get("/api/db-test", async (req, res) => {
     res.status(500).json({ error: "Database Connection Failed" });
   }
 });
-
-app.get("/api/recipes", async (req, res) => {
-  try {
-    const recipes = await prisma.recipes.findMany();
-    res.json(recipes);
-  } catch (error) {
-    console.error("❌ Error fetching recipes:", (error as Error).message);
-    res.status(500).json({ 
-      error: "Failed to fetch recipes", 
-      details: (error as Error).message 
-    });
-  }
-});
-
-
 
 export default app;
