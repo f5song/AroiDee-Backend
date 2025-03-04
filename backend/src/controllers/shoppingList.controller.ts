@@ -33,7 +33,7 @@ export const getAllShoppingLists = async (req: Request, res: Response) => {
     const userId = Number(req.query.user_id); // รับ user_id จาก query parameter
 
     if (isNaN(userId)) {
-      return res.status(400).json({ success: false, message: "Invalid user ID" });
+      return res.status(400).json({ success: false, message: "Invalid user ID shoplist" });
     }
 
     const lists = await prisma.shopping_lists.findMany({

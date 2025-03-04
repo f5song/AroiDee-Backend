@@ -129,7 +129,7 @@ export const deleteUserById = async (req: AuthRequest, res: Response): Promise<v
     const userId = Number(req.params.id);
 
     if (isNaN(userId)) {
-      res.status(400).json({ success: false, message: "Invalid user ID" });
+      res.status(400).json({ success: false, message: "Invalid user ID user ja" });
       return;
     }
 
