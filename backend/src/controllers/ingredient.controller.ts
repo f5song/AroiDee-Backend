@@ -8,6 +8,10 @@ export const createIngredient = async (req: Request, res: Response) => {
   try {
     const { name, unit } = req.body;
 
+    if (!name || !unit) {
+      return res.status(400).json({ success: false, message: "Name and unit are required" });
+    }
+
     // ตรวจสอบว่ามี ingredient นี้อยู่แล้วหรือไม่
     const existingIngredient = await prisma.ingredients.findUnique({
       where: { name },
@@ -23,7 +27,7 @@ export const createIngredient = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: newIngredient });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error creating ingredient", error: error.message });
   }
 };
 
@@ -31,54 +35,72 @@ export const createIngredient = async (req: Request, res: Response) => {
 export const getAllIngredients = async (_req: Request, res: Response) => {
   try {
     const ingredients = await prisma.ingredients.findMany();
-    res.json({ success: true, data: ingredients });
+    res.status(200).json({ success: true, data: ingredients });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error fetching ingredients", error: error.message });
   }
 };
 
 // ✅ GET /api/ingredients/:id - ดึงข้อมูลวัตถุดิบตาม ID
 export const getIngredientById = async (req: Request, res: Response) => {
   try {
+    const ingredientId = Number(req.params.id);
+    if (isNaN(ingredientId)) {
+      return res.status(400).json({ success: false, message: "Invalid ingredient ID" });
+    }
+
     const ingredient = await prisma.ingredients.findUnique({
-      where: { id: Number(req.params.id) },
+      where: { id: ingredientId },
     });
 
     if (!ingredient) {
       return res.status(404).json({ success: false, message: "Ingredient not found" });
     }
 
-    res.json({ success: true, data: ingredient });
+    res.status(200).json({ success: true, data: ingredient });
   } catch (error: any) {
-    res.status(404).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error fetching ingredient", error: error.message });
   }
 };
 
 // ✅ PUT /api/ingredients/:id - แก้ไขข้อมูลวัตถุดิบ
 export const updateIngredient = async (req: Request, res: Response) => {
   try {
+    const ingredientId = Number(req.params.id);
     const { name, unit } = req.body;
 
+    if (isNaN(ingredientId)) {
+      return res.status(400).json({ success: false, message: "Invalid ingredient ID" });
+    }
+    if (!name || !unit) {
+      return res.status(400).json({ success: false, message: "Name and unit are required" });
+    }
+
     const updatedIngredient = await prisma.ingredients.update({
-      where: { id: Number(req.params.id) },
+      where: { id: ingredientId },
       data: { name, unit },
     });
 
-    res.json({ success: true, data: updatedIngredient });
+    res.status(200).json({ success: true, data: updatedIngredient });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error updating ingredient", error: error.message });
   }
 };
 
 // ✅ DELETE /api/ingredients/:id - ลบวัตถุดิบ
 export const deleteIngredient = async (req: Request, res: Response) => {
   try {
+    const ingredientId = Number(req.params.id);
+    if (isNaN(ingredientId)) {
+      return res.status(400).json({ success: false, message: "Invalid ingredient ID" });
+    }
+
     await prisma.ingredients.delete({
-      where: { id: Number(req.params.id) },
+      where: { id: ingredientId },
     });
 
-    res.json({ success: true, message: "Ingredient deleted successfully" });
+    res.status(200).json({ success: true, message: "Ingredient deleted successfully" });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Error deleting ingredient", error: error.message });
   }
 };
