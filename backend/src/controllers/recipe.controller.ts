@@ -32,8 +32,6 @@ export const getAllRecipes = async (req: Request, res: Response) => {
       },
     });
     
-    
-
     res.json({ success: true, data: recipes });
   } catch (error) {
     console.error("Error fetching recipes:", error);
