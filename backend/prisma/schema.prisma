@@ -48,18 +48,18 @@ model recipe_ingredients {
 
 model recipes {
   id                 Int                  @id @default(autoincrement())
-  user_id            Int?
-  category_id        Int?
+  user_id            Int                  // บังคับให้ต้องมีผู้สร้าง
+  category_id        Int?                 // หมวดหมู่เป็น optional ได้
   title              String               @db.VarChar(255)
   description        String?
   instructions       String
   image_url          String?
-  created_at         DateTime?            @default(now()) @db.Timestamp(6)
-  cook_time          Int?
+  created_at         DateTime             @default(now()) @db.Timestamp(6)
+  cook_time          Int                  @default(0) // ต้องมี cook_time และมี default 0
   nutrition_facts    nutrition_facts[]
   recipe_ingredients recipe_ingredients[]
-  categories         categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  users              users?               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category           categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  user               users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model shopping_list_items {
