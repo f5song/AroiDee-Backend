@@ -24,8 +24,12 @@ export const getAllRecipes = async (req: Request, res: Response) => {
         user: {
           select: { username: true },
         },
-        categories: {
-          select: { name: true }, // ดึงหมวดหมู่ทั้งหมดที่เกี่ยวข้องกับสูตรอาหาร
+        recipe_categories: { // เชื่อมโยงไปยัง recipe_categories
+          include: {
+            category: { // เชื่อมโยงไปยัง category
+              select: { name: true },
+            },
+          },
         },
         recipe_ingredients: {
           include: { ingredients: true },
@@ -35,7 +39,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
         },
       },
     });
-    
+
     // ✅ แปลงข้อมูลให้ frontend ใช้ได้ง่าย
     const formattedRecipes = recipes.map(recipe => ({
       id: recipe.id,
@@ -44,21 +48,22 @@ export const getAllRecipes = async (req: Request, res: Response) => {
       image_url: recipe.image_url || "/default-recipe.jpg",
       cook_time: recipe.cook_time || 0,
       calories: recipe.nutrition_facts?.[0]?.calories ? Number(recipe.nutrition_facts[0].calories) : 0,
-      
+
       // แปลง categories ให้อยู่ในรูปแบบที่เหมาะสม (อาเรย์ของชื่อหมวดหมู่)
-      categories: Array.isArray(recipe.categories) ? recipe.categories.map((cat) => cat.name) : [],
-    
+      categories: recipe.recipe_categories?.map((rc) => rc.category.name) || [],
+
       // แปลง recipe_ingredients และ ingredients ให้อยู่ในรูปแบบที่เหมาะสม
       ingredients: recipe.recipe_ingredients?.map((ri) => ri.ingredients?.name || "Unknown") || [],
     }));
-    
+
     res.json({ success: true, data: formattedRecipes });
-    
+
   } catch (error) {
     console.error("Error fetching recipes:", error);
     res.status(500).json({ success: false, message: "Failed to fetch recipes" });
   }
 };
+
 
 
 // ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID
