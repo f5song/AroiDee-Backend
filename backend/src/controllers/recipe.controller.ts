@@ -21,7 +21,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
   try {
     const recipes = await prisma.recipes.findMany({
       include: {
-        users: {
+        user: {
           select: { username: true },
         },
         categories: {
@@ -40,7 +40,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
     const formattedRecipes = recipes.map(recipe => ({
       id: recipe.id,
       title: recipe.title,
-      author: recipe.users?.username || "Unknown",
+      author: recipe.user?.username || "Unknown",
       image_url: recipe.image_url || "/default-recipe.jpg",
       cook_time: recipe.cook_time || 0,
       calories: recipe.nutrition_facts?.[0]?.calories ? Number(recipe.nutrition_facts[0].calories) : 0,
