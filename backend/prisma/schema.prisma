@@ -58,8 +58,8 @@ model recipes {
   cook_time          Int                  @default(0) // ต้องมี cook_time และมี default 0
   nutrition_facts    nutrition_facts[]
   recipe_ingredients recipe_ingredients[]
-  category           categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  user               users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories           categories?          @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  users               users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model shopping_list_items {

@@ -21,8 +21,8 @@ export const getAllRecipes = async (req: Request, res: Response) => {
   try {
     const recipes = await prisma.recipes.findMany({
       include: {
-        users: {
-          select: { username: true }, // ✅ ดึง `users.username`
+        users: {  // ✅ ใช้ `users` แทน `user`
+          select: { username: true },
         },
         categories: true,
         recipe_ingredients: {
@@ -31,6 +31,8 @@ export const getAllRecipes = async (req: Request, res: Response) => {
         nutrition_facts: true,
       },
     });
+    
+    
 
     res.json({ success: true, data: recipes });
   } catch (error) {
