@@ -9,7 +9,7 @@ export const createCategory = async (req: Request, res: Response) => {
     const { name } = req.body;
 
     // ตรวจสอบว่าชื่อหมวดหมู่ซ้ำหรือไม่
-    const existingCategory = await prisma.categories.findUnique({
+    const existingCategory = await prisma.categories.findFirst({
       where: { name },
     });
 
@@ -27,6 +27,7 @@ export const createCategory = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Error creating category", error: error.message });
   }
 };
+
 
 // ✅ GET /api/categories - ดึงรายการหมวดหมู่ทั้งหมด
 export const getAllCategories = async (req: Request, res: Response) => {
