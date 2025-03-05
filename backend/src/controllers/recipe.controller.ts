@@ -20,27 +20,45 @@ export const createRecipe = async (req: Request, res: Response) => {
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
     const recipes = await prisma.recipes.findMany({
-      include: {
-        users: {  // ✅ ใช้ `users` แทน `user`
+      select: {
+        id: true,
+        title: true,
+        cook_time: true,  // ✅ ดึง cook_time มาด้วย
+        image_url: true,
+        users: {
           select: { username: true },
         },
-        categories: true,
+        categories: {
+          select: { name: true },
+        },
         recipe_ingredients: {
           include: { ingredients: true },
         },
-        nutrition_facts: true,
+        nutrition_facts: {
+          select: { calories: true },
+        },
       },
-    });
-    
-    res.json({ success: true, data: recipes });
+   });
+   
+
+    // ✅ ตรวจสอบข้อมูลก่อนส่งออก
+    const formattedRecipes = recipes.map(recipe => ({
+      id: recipe.id,
+      title: recipe.title,
+      author: recipe.users?.username || "Unknown",
+      image_url: recipe.image_url || "/default-recipe.jpg",
+      cook_time: recipe.cook_time ?? 0,  // ✅ ใช้ค่าจาก Prisma โดยตรง
+      calories: recipe.nutrition_facts?.[0]?.calories ? Number(recipe.nutrition_facts[0].calories) : 0,  // ✅ แปลงค่า Decimal เป็น Number
+      ingredients: recipe.recipe_ingredients.map(ri => ri.ingredients?.name || "Unknown"),
+   }));
+   
+
+    res.json({ success: true, data: formattedRecipes });
   } catch (error) {
     console.error("Error fetching recipes:", error);
     res.status(500).json({ success: false, message: "Failed to fetch recipes" });
   }
 };
-
-
-
 
 
 // ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID
