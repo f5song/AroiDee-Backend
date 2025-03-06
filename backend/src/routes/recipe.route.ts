@@ -8,7 +8,7 @@ import {
   updateRecipe,
   deleteRecipe,
 } from "../controllers/recipe.controller";
-import { authMiddleware } from "../middlewares/authMiddleware";
+import authMiddleware from "../middlewares/authMiddleware"; // ✅ ใช้ Default Import ถ้า Export แบบ `export default`
 
 const router = express.Router();
 

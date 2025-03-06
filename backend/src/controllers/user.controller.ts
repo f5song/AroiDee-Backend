@@ -158,6 +158,7 @@ export const deleteUserById = async (req: AuthenticatedRequest, res: Response): 
 
 
 // POST /api/login - เข้าสู่ระบบผู้ใช้
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -167,10 +168,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // ✅ ค้นหาผู้ใช้ในฐานข้อมูล
+    // ✅ ค้นหาผู้ใช้ในฐานข้อมูล (ไม่มี `role`)
     const user = await prisma.users.findUnique({
       where: { email },
-    });
+      select: { id: true, username: true, email: true, password_hash: true }, // ✅ เพิ่ม password_hash
+    });    
 
     if (!user) {
       res.status(401).json({ success: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
@@ -184,19 +186,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // ✅ สร้าง JWT Token
+    // ✅ ลบ `role` ออกจาก JWT Token
     const token = createToken({ id: user.id, email: user.email });
 
-    // ✅ ส่ง JWT Token กลับไปให้ผู้ใช้
     res.json({
       success: true,
       message: "เข้าสู่ระบบสำเร็จ",
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      },
-      token, // ✅ Token ที่ใช้สำหรับ Auth
+      user: { id: user.id, username: user.username, email: user.email },
+      token,
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ", error: error.message });
