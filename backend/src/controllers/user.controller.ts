@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { AuthRequest } from "../middlewares/authMiddleware";
+import { AuthenticatedRequest } from "../middlewares/authMiddleware"; // ✅ เปลี่ยนจาก AuthRequest เป็น AuthenticatedRequest
+
+import { createToken } from "../utils/auth"; // ✅ Import ฟังก์ชันสร้าง Token
 
 const prisma = new PrismaClient();
 const saltRounds = 10; // สำหรับ hash รหัสผ่าน
@@ -67,8 +69,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+
 // ✅ GET /api/users/profile - ดึงข้อมูลโปรไฟล์ของผู้ใช้ที่ล็อกอิน
-export const getUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
       res.status(401).json({ success: false, message: "Not authorized" });
@@ -96,8 +99,9 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
+
 // ✅ PUT /api/users/profile - อัปเดตข้อมูลโปรไฟล์
-export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     const { username, email } = req.body;
@@ -124,7 +128,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
 };
 
 // ✅ DELETE /api/users/:id - ลบผู้ใช้
-export const deleteUserById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteUserById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = Number(req.params.id);
 
@@ -151,3 +155,52 @@ export const deleteUserById = async (req: AuthRequest, res: Response): Promise<v
     res.status(500).json({ success: false, message: "Error deleting user", error: error.message });
   }
 };
+
+
+// POST /api/login - เข้าสู่ระบบผู้ใช้
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ success: false, message: "กรุณากรอกอีเมลและรหัสผ่าน" });
+      return;
+    }
+
+    // ✅ ค้นหาผู้ใช้ในฐานข้อมูล
+    const user = await prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      res.status(401).json({ success: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+      return;
+    }
+
+    // ✅ ตรวจสอบรหัสผ่าน
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      res.status(401).json({ success: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+      return;
+    }
+
+    // ✅ สร้าง JWT Token
+    const token = createToken({ id: user.id, email: user.email });
+
+    // ✅ ส่ง JWT Token กลับไปให้ผู้ใช้
+    res.json({
+      success: true,
+      message: "เข้าสู่ระบบสำเร็จ",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      },
+      token, // ✅ Token ที่ใช้สำหรับ Auth
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ", error: error.message });
+  }
+};
+
+

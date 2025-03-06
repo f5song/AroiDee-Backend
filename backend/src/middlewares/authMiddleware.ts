@@ -1,42 +1,29 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import prisma from "../config/db";
 
-export interface AuthRequest extends Request {
-  user?: any;
+const SECRET_KEY = process.env.JWT_SECRET as string;
+
+if (!SECRET_KEY) {
+  throw new Error("❌ JWT_SECRET is not set in environment variables!");
 }
 
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+// ✅ สร้าง Interface Request ที่รองรับ `user`
+export interface AuthenticatedRequest extends Request {
+  user?: { id: number; email: string };
+}
+
+export const authenticateUser = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Access Denied. No token provided." });
+  }
+
   try {
-    const token = req.header("Authorization")?.split(" ")[1];
-
-    if (!token) {
-      res.status(401).json({ success: false, message: "Not authorized, no token" });
-      return;
-    }
-
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
-    console.log("Decoded Token:", decoded);
-
-    if (!decoded || !decoded.id) {
-      res.status(401).json({ success: false, message: "Invalid token structure" });
-      return;
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, username: true, email: true },
-    });
-
-    if (!user) {
-      res.status(401).json({ success: false, message: "User not found" });
-      return;
-    }
-
-    req.user = user;
+    const decoded = jwt.verify(token, SECRET_KEY) as { userId: number; email: string };
+    req.user = { id: decoded.userId, email: decoded.email }; // ✅ เพิ่ม `user` ลงใน `req`
     next();
   } catch (error) {
-    console.error("JWT Error:", error);
-    res.status(401).json({ success: false, message: "Not authorized, token failed" });
+    res.status(401).json({ success: false, message: "Invalid token." });
   }
 };
