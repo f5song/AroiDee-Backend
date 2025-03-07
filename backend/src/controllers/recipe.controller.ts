@@ -134,17 +134,10 @@ export const getRecipeById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Recipe not found" });
     }
 
-    // ✅ ตรวจสอบและแปลง `instructions`
-    let parsedInstructions: string[] = [];
-    if (typeof recipe.instructions === "string") {
-      try {
-        parsedInstructions = JSON.parse(recipe.instructions);
-      } catch (error) {
-        console.error("❌ Failed to parse instructions:", error);
-      }
-    } else if (Array.isArray(recipe.instructions)) {
-      parsedInstructions = recipe.instructions;
-    }
+    // ✅ ตรวจสอบและแปลง `instructions` เป็น `string[]`
+    const parsedInstructions: string[] = Array.isArray(recipe.instructions)
+      ? (recipe.instructions as unknown as string[])
+      : [];
 
     // ✅ ตรวจสอบว่า `nutrition_facts` มีค่าก่อนเข้าถึง
     const nutrition = recipe.nutrition_facts?.[0] || null;
@@ -196,6 +189,7 @@ export const getRecipeById = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Error fetching recipe", error: error.message });
   }
 };
+
 
 
 
