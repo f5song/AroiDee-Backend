@@ -130,11 +130,20 @@ export const getRecipeById = async (req: Request, res: Response) => {
       },
     });
 
-    // ✅ Debug ตรวจสอบข้อมูล
-    console.log("Recipe Data:", JSON.stringify(recipe, null, 2));
-
     if (!recipe) {
       return res.status(404).json({ success: false, message: "Recipe not found" });
+    }
+
+    // ✅ ตรวจสอบและแปลง `instructions`
+    let parsedInstructions: string[] = [];
+    if (typeof recipe.instructions === "string") {
+      try {
+        parsedInstructions = JSON.parse(recipe.instructions);
+      } catch (error) {
+        console.error("❌ Failed to parse instructions:", error);
+      }
+    } else if (Array.isArray(recipe.instructions)) {
+      parsedInstructions = recipe.instructions;
     }
 
     // ✅ ตรวจสอบว่า `nutrition_facts` มีค่าก่อนเข้าถึง
@@ -145,9 +154,7 @@ export const getRecipeById = async (req: Request, res: Response) => {
       id: recipe.id,
       title: recipe.title,
       description: recipe.description,
-      instructions: Array.isArray(recipe.instructions)
-        ? recipe.instructions
-        : JSON.parse(recipe.instructions || "[]"),
+      instructions: parsedInstructions, // ✅ ใช้ค่าที่ parse แล้ว
       image_url: recipe.image_url,
       cook_time: recipe.cook_time,
       rating: recipe.rating,
@@ -184,14 +191,12 @@ export const getRecipeById = async (req: Request, res: Response) => {
       })),
     };
 
-    // ✅ Debug ตรวจสอบข้อมูลที่ถูกแปลงแล้ว
-    console.log("Formatted Recipe:", JSON.stringify(formattedRecipe, null, 2));
-
     res.status(200).json({ success: true, data: formattedRecipe });
   } catch (error: any) {
     res.status(500).json({ success: false, message: "Error fetching recipe", error: error.message });
   }
 };
+
 
 
 
