@@ -16,7 +16,6 @@ export const createRecipe = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด พร้อมรองรับ `sort`
 // ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
@@ -30,7 +29,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
     if (sort === "name-asc") orderBy = { title: "asc" };
     if (sort === "name-desc") orderBy = { title: "desc" };
 
-    // 🔹 ถ้าเป็น sort ตาม calories ต้องใช้ query แยกต่างหาก
+    // 🔹 ถ้าเป็น sort ตาม calories ต้อง query ID ก่อน
     if (sort === "calories-low" || sort === "calories-high") {
       const sortOrder = sort === "calories-low" ? "asc" : "desc";
 
@@ -38,16 +37,21 @@ export const getAllRecipes = async (req: Request, res: Response) => {
       const sortedRecipes = await prisma.nutrition_facts.findMany({
         select: { recipe_id: true },
         orderBy: { calories: sortOrder },
-        take: 50, // ✅ จำกัดจำนวน (ป้องกัน Timeout)
       });
 
-      // ✅ กรองค่า null ออกจาก recipe_id
+      // ✅ กรองค่า null ออกจาก recipe_id และเรียงลำดับใหม่
       recipeIds = sortedRecipes.map((r) => r.recipe_id).filter((id): id is number => id !== null);
+
+      if (recipeIds.length > 0) {
+        // ✅ ใช้ `ORDER BY FIELD(id, ...)` เพื่อเรียงลำดับตามที่ดึงมา
+        const idOrder = recipeIds.join(", "); // "1, 2, 3, ..."
+        orderBy = prisma.$queryRaw`ORDER BY FIELD(id, ${idOrder})`;
+      }
     }
 
     // ✅ Query สูตรอาหาร พร้อม sort ตาม ID ที่เรียงจาก nutrition_facts
     const recipes = await prisma.recipes.findMany({
-      where: recipeIds ? { id: { in: recipeIds } } : undefined, // ใช้ ID ที่เรียงมาแล้ว
+      where: recipeIds ? { id: { in: recipeIds } } : undefined,
       include: {
         user: { select: { username: true } },
         recipe_categories: { include: { category: { select: { name: true } } } },
