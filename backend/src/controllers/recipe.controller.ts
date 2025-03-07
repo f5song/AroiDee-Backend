@@ -17,48 +17,66 @@ export const createRecipe = async (req: Request, res: Response) => {
 };
 
 // ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
-// ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
-    const { sort } = req.query;
+    const { sort, category } = req.query;
+    // กำหนดค่าเริ่มต้นของ orderBy และ where
     let orderBy: any = { created_at: "desc" }; // ค่าเริ่มต้น: ใหม่ไปเก่า
-    let sortedRecipeIds: number[] | undefined = undefined; // ใช้เก็บลำดับ ID ของ recipes
+    let sortedRecipeIds: number[] | undefined = undefined; // สำหรับการเรียง calories แบบ optimized
+    let where: any = {};
 
+    // หากมี category filter (และไม่ใช่ "all") ให้เพิ่มเงื่อนไขใน where
+    if (category && category !== "all") {
+      where.recipe_categories = {
+        some: {
+          category: {
+            name: { equals: category, mode: "insensitive" },
+          },
+        },
+      };
+    }
+
+    // กำหนด orderBy สำหรับ sort แบบอื่นๆ
     if (sort === "oldest") orderBy = { created_at: "asc" };
     if (sort === "rating") orderBy = { rating: "desc" };
     if (sort === "cooking-time") orderBy = { cook_time: "asc" };
     if (sort === "name-asc") orderBy = { title: "asc" };
     if (sort === "name-desc") orderBy = { title: "desc" };
 
-    // 🔹 ถ้าเป็น sort ตาม calories ต้อง query ID ก่อน
+    // สำหรับการ sort แบบ calories
     if (sort === "calories-low" || sort === "calories-high") {
-      const sortOrder = sort === "calories-low" ? "asc" : "desc";
-
-      // ✅ Query เฉพาะ ID ของ recipes ที่เรียงตาม calories
-      const sortedRecipes = await prisma.nutrition_facts.findMany({
-        select: { recipe_id: true },
-        orderBy: { calories: sortOrder },
-      });
-
-      // ✅ กรองค่า null ออกจาก recipe_id
-      sortedRecipeIds = sortedRecipes
-        .map((r) => r.recipe_id)
-        .filter((id): id is number => id !== null);
+      // หากไม่มี category filter (หรือเลือก "all") ให้ใช้ query แบบ optimized
+      if (!category || category === "all") {
+        const sortOrder = sort === "calories-low" ? "asc" : "desc";
+        const sortedRecipes = await prisma.nutrition_facts.findMany({
+          select: { recipe_id: true },
+          orderBy: { calories: sortOrder },
+        });
+        sortedRecipeIds = sortedRecipes
+          .map((r) => r.recipe_id)
+          .filter((id): id is number => id !== null);
+        // เมื่อใช้ sortedRecipeIds แล้ว จะไม่ส่ง orderBy ไปใน query หลัก
+        orderBy = undefined;
+      } else {
+        // หากมี category filter เราไม่สามารถใช้ sortedRecipeIds แบบ optimized ได้
+        // ให้ปล่อย orderBy เป็น undefined และทำการ sort ใน JS ภายหลัง
+        orderBy = undefined;
+      }
     }
 
-    // ✅ Query สูตรอาหาร พร้อม sort ตาม ID ที่เรียงจาก nutrition_facts
+    // Query สูตรอาหาร โดยนำ where condition มารวมกับ sortedRecipeIds (ถ้ามี)
     const recipes = await prisma.recipes.findMany({
-      where: sortedRecipeIds ? { id: { in: sortedRecipeIds } } : undefined,
+      where: sortedRecipeIds ? { ...where, id: { in: sortedRecipeIds } } : where,
       include: {
         user: { select: { username: true } },
         recipe_categories: { include: { category: { select: { name: true } } } },
         recipe_ingredients: { include: { ingredients: { select: { name: true } } } },
         nutrition_facts: { select: { calories: true } },
       },
-      orderBy: sortedRecipeIds ? undefined : orderBy, // ถ้ามี recipeIds แล้ว ไม่ต้องใช้ orderBy
+      orderBy: sortedRecipeIds ? undefined : orderBy,
     });
 
-    // ✅ แปลงข้อมูลให้ frontend ใช้ได้ง่าย
+    // แปลงข้อมูลให้ frontend ใช้งานง่าย
     let formattedRecipes = recipes.map((recipe) => ({
       id: recipe.id,
       title: recipe.title,
@@ -73,7 +91,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
       ingredients: recipe.recipe_ingredients?.map((ri) => ri.ingredients?.name || "Unknown") || [],
     }));
 
-    // ✅ เรียงลำดับอีกครั้งด้วย JavaScript (เป็นทางเลือกเสริม)
+    // ถ้า sort เป็น calories-low หรือ calories-high ให้ทำการเรียงลำดับอีกครั้งใน JS
     if (sort === "calories-low") {
       formattedRecipes.sort((a, b) => a.calories - b.calories);
     }
@@ -86,6 +104,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
     console.error("❌ Error fetching recipes:", error);
   }
 };
+
 
 
 
