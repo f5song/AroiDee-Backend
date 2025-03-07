@@ -17,39 +17,42 @@ export const createRecipe = async (req: Request, res: Response) => {
 };
 
 // ✅ GET /api/recipes - ดึงรายการสูตรอาหารทั้งหมด พร้อมรองรับ `sort`
+// ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
-    const { sort } = req.query; // รับค่าพารามิเตอร์ sort จาก query string
-    let orderBy: any = { created_at: "desc" }; // ค่าเริ่มต้น: เรียงจากใหม่ไปเก่า
+    const { sort } = req.query;
+    let orderBy: any = { created_at: "desc" }; // ค่าเริ่มต้น: ใหม่ไปเก่า
 
     if (sort === "oldest") orderBy = { created_at: "asc" };
     if (sort === "rating") orderBy = { rating: "desc" };
     if (sort === "cooking-time") orderBy = { cook_time: "asc" };
     if (sort === "name-asc") orderBy = { title: "asc" };
     if (sort === "name-desc") orderBy = { title: "desc" };
-    if (sort === "calories-low") orderBy = { nutrition_facts: { calories: "asc" } };
-    if (sort === "calories-high") orderBy = { nutrition_facts: { calories: "desc" } };
+
+    // 🔹 ถ้าเป็น calories ต้องใช้ aggregate (_min หรือ _max)
+    if (sort === "calories-low") {
+      orderBy = {
+        nutrition_facts: {
+          _min: { calories: "asc" },
+        },
+      };
+    }
+    if (sort === "calories-high") {
+      orderBy = {
+        nutrition_facts: {
+          _max: { calories: "desc" },
+        },
+      };
+    }
 
     const recipes = await prisma.recipes.findMany({
       include: {
-        user: {
-          select: { username: true },
-        },
-        recipe_categories: {
-          include: {
-            category: {
-              select: { name: true },
-            },
-          },
-        },
-        recipe_ingredients: {
-          include: { ingredients: { select: { name: true } } },
-        },
-        nutrition_facts: {
-          select: { calories: true },
-        },
+        user: { select: { username: true } },
+        recipe_categories: { include: { category: { select: { name: true } } } },
+        recipe_ingredients: { include: { ingredients: { select: { name: true } } } },
+        nutrition_facts: { select: { calories: true } },
       },
-      orderBy, // ✅ เพิ่มการเรียงลำดับ
+      orderBy, // ✅ Prisma Aggregate ใช้ _min หรือ _max แทน
     });
 
     // ✅ แปลงข้อมูลให้ frontend ใช้ได้ง่าย
@@ -62,19 +65,17 @@ export const getAllRecipes = async (req: Request, res: Response) => {
       calories: recipe.nutrition_facts?.[0]?.calories
         ? Number(recipe.nutrition_facts[0].calories)
         : 0,
-      rating: recipe.rating ?? 0, // ✅ เพิ่มค่า rating
-      categories:
-        recipe.recipe_categories?.map((rc) => rc.category.name) || [],
-      ingredients:
-        recipe.recipe_ingredients?.map((ri) => ri.ingredients?.name || "Unknown") || [],
+      rating: recipe.rating ?? 0,
+      categories: recipe.recipe_categories?.map((rc) => rc.category.name) || [],
+      ingredients: recipe.recipe_ingredients?.map((ri) => ri.ingredients?.name || "Unknown") || [],
     }));
 
     res.json({ success: true, data: formattedRecipes });
   } catch (error) {
-    console.error("Error fetching recipes:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch recipes" });
+    console.error("❌ Error fetching recipes:", error);
   }
 };
+
 
 
 
