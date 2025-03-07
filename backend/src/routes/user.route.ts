@@ -2,6 +2,7 @@ import express from "express";
 import { fetchUsers, register, getUserProfile, updateUserProfile, deleteUserById, login } from "../controllers/user.controller";
 import authMiddleware from "../middlewares/authMiddleware"; // ✅ ใช้ Default Import ถ้า Export แบบ `export default`
 
+
 const router = express.Router();
 
 router.get("/", fetchUsers);
