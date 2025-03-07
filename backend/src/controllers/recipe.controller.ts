@@ -111,6 +111,9 @@ export const getAllRecipes = async (req: Request, res: Response) => {
 
 export const getRecipeById = async (req: Request, res: Response) => {
   try {
+
+    console.log("🔍 Recipe ID from request:", req.params.id); // ✅ Debug
+    
     const recipeId = Number(req.params.id);
     if (isNaN(recipeId)) {
       return res.status(400).json({ success: false, message: "Invalid recipe ID" });
