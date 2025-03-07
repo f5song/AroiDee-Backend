@@ -109,7 +109,6 @@ export const getAllRecipes = async (req: Request, res: Response) => {
 
 
 
-// ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID พร้อมข้อมูล nutrition_facts, categories และ ingredients
 export const getRecipeById = async (req: Request, res: Response) => {
   try {
     const recipeId = Number(req.params.id);
@@ -117,10 +116,11 @@ export const getRecipeById = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid recipe ID" });
     }
 
+    // ✅ ดึงข้อมูลจากฐานข้อมูล
     const recipe = await prisma.recipes.findUnique({
       where: { id: recipeId },
       include: {
-        nutrition_facts: true, // ✅ ดึงข้อมูลโภชนาการ (เป็นอาร์เรย์)
+        nutrition_facts: true, // ✅ ดึงข้อมูลโภชนาการ
         recipe_categories: {
           include: { category: true }, // ✅ ดึงหมวดหมู่
         },
@@ -130,11 +130,14 @@ export const getRecipeById = async (req: Request, res: Response) => {
       },
     });
 
+    // ✅ Debug ตรวจสอบข้อมูล
+    console.log("Recipe Data:", JSON.stringify(recipe, null, 2));
+
     if (!recipe) {
       return res.status(404).json({ success: false, message: "Recipe not found" });
     }
 
-    // ✅ ตรวจสอบว่า nutrition_facts มีค่าก่อนเข้าถึง
+    // ✅ ตรวจสอบว่า `nutrition_facts` มีค่าก่อนเข้าถึง
     const nutrition = recipe.nutrition_facts?.[0] || null;
 
     // ✅ แปลงข้อมูลให้ frontend ใช้งานง่ายขึ้น
@@ -150,18 +153,18 @@ export const getRecipeById = async (req: Request, res: Response) => {
       rating: recipe.rating,
       created_at: recipe.created_at,
 
-      // ✅ ใช้ Optional Chaining + Nullish Coalescing เพื่อป้องกัน Error
+      // ✅ ดึงค่าจาก `nutrition_facts`
       nutrition_facts: nutrition
         ? {
-            calories: nutrition?.calories ?? null,
-            total_fat: nutrition?.total_fat ?? null,
-            saturated_fat: nutrition?.saturated_fat ?? null,
-            cholesterol: nutrition?.cholesterol ?? null,
-            sodium: nutrition?.sodium ?? null,
-            potassium: nutrition?.potassium ?? null,
-            total_carbohydrate: nutrition?.total_carbohydrate ?? null,
-            sugars: nutrition?.sugars ?? null,
-            protein: nutrition?.protein ?? null,
+            calories: nutrition.calories ?? null,
+            total_fat: nutrition.total_fat ?? null,
+            saturated_fat: nutrition.saturated_fat ?? null,
+            cholesterol: nutrition.cholesterol ?? null,
+            sodium: nutrition.sodium ?? null,
+            potassium: nutrition.potassium ?? null,
+            total_carbohydrate: nutrition.total_carbohydrate ?? null,
+            sugars: nutrition.sugars ?? null,
+            protein: nutrition.protein ?? null,
           }
         : null,
 
@@ -180,6 +183,9 @@ export const getRecipeById = async (req: Request, res: Response) => {
         quantity: ri.quantity ?? 0,
       })),
     };
+
+    // ✅ Debug ตรวจสอบข้อมูลที่ถูกแปลงแล้ว
+    console.log("Formatted Recipe:", JSON.stringify(formattedRecipe, null, 2));
 
     res.status(200).json({ success: true, data: formattedRecipe });
   } catch (error: any) {
