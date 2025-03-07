@@ -17,11 +17,12 @@ export const createRecipe = async (req: Request, res: Response) => {
 };
 
 // ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
+// ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
 export const getAllRecipes = async (req: Request, res: Response) => {
   try {
     const { sort } = req.query;
     let orderBy: any = { created_at: "desc" }; // ค่าเริ่มต้น: ใหม่ไปเก่า
-    let recipeIds: number[] | undefined = undefined; // ใช้เก็บลำดับ ID ของ recipes
+    let sortedRecipeIds: number[] | undefined = undefined; // ใช้เก็บลำดับ ID ของ recipes
 
     if (sort === "oldest") orderBy = { created_at: "asc" };
     if (sort === "rating") orderBy = { rating: "desc" };
@@ -39,30 +40,26 @@ export const getAllRecipes = async (req: Request, res: Response) => {
         orderBy: { calories: sortOrder },
       });
 
-      // ✅ กรองค่า null ออกจาก recipe_id และเรียงลำดับใหม่
-      recipeIds = sortedRecipes.map((r) => r.recipe_id).filter((id): id is number => id !== null);
-
-      if (recipeIds.length > 0) {
-        // ✅ ใช้ `ORDER BY FIELD(id, ...)` เพื่อเรียงลำดับตามที่ดึงมา
-        const idOrder = recipeIds.join(", "); // "1, 2, 3, ..."
-        orderBy = prisma.$queryRaw`ORDER BY FIELD(id, ${idOrder})`;
-      }
+      // ✅ กรองค่า null ออกจาก recipe_id
+      sortedRecipeIds = sortedRecipes
+        .map((r) => r.recipe_id)
+        .filter((id): id is number => id !== null);
     }
 
     // ✅ Query สูตรอาหาร พร้อม sort ตาม ID ที่เรียงจาก nutrition_facts
     const recipes = await prisma.recipes.findMany({
-      where: recipeIds ? { id: { in: recipeIds } } : undefined,
+      where: sortedRecipeIds ? { id: { in: sortedRecipeIds } } : undefined,
       include: {
         user: { select: { username: true } },
         recipe_categories: { include: { category: { select: { name: true } } } },
         recipe_ingredients: { include: { ingredients: { select: { name: true } } } },
         nutrition_facts: { select: { calories: true } },
       },
-      orderBy: recipeIds ? undefined : orderBy, // ถ้ามี recipeIds แล้ว ไม่ต้องใช้ orderBy
+      orderBy: sortedRecipeIds ? undefined : orderBy, // ถ้ามี recipeIds แล้ว ไม่ต้องใช้ orderBy
     });
 
     // ✅ แปลงข้อมูลให้ frontend ใช้ได้ง่าย
-    const formattedRecipes = recipes.map((recipe) => ({
+    let formattedRecipes = recipes.map((recipe) => ({
       id: recipe.id,
       title: recipe.title,
       author: recipe.user?.username || "Unknown",
@@ -75,6 +72,14 @@ export const getAllRecipes = async (req: Request, res: Response) => {
       categories: recipe.recipe_categories?.map((rc) => rc.category.name) || [],
       ingredients: recipe.recipe_ingredients?.map((ri) => ri.ingredients?.name || "Unknown") || [],
     }));
+
+    // ✅ เรียงลำดับอีกครั้งด้วย JavaScript (เป็นทางเลือกเสริม)
+    if (sort === "calories-low") {
+      formattedRecipes.sort((a, b) => a.calories - b.calories);
+    }
+    if (sort === "calories-high") {
+      formattedRecipes.sort((a, b) => b.calories - a.calories);
+    }
 
     res.json({ success: true, data: formattedRecipes });
   } catch (error) {
