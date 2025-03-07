@@ -109,8 +109,7 @@ export const getAllRecipes = async (req: Request, res: Response) => {
 
 
 
-
-// ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID
+// ✅ GET /api/recipes/:id - ดึงรายละเอียดสูตรอาหารตาม ID พร้อมข้อมูล nutrition_facts, categories และ ingredients
 export const getRecipeById = async (req: Request, res: Response) => {
   try {
     const recipeId = Number(req.params.id);
@@ -120,17 +119,78 @@ export const getRecipeById = async (req: Request, res: Response) => {
 
     const recipe = await prisma.recipes.findUnique({
       where: { id: recipeId },
+      include: {
+        nutrition_facts: true, // ✅ ดึงข้อมูลโภชนาการ (เป็นอาร์เรย์)
+        recipe_categories: {
+          include: { category: true }, // ✅ ดึงหมวดหมู่
+        },
+        recipe_ingredients: {
+          include: { ingredients: true }, // ✅ ดึงส่วนผสม
+        },
+      },
     });
 
     if (!recipe) {
       return res.status(404).json({ success: false, message: "Recipe not found" });
     }
 
-    res.status(200).json({ success: true, data: recipe });
+    // ✅ ตรวจสอบว่า nutrition_facts มีค่าก่อนเข้าถึง
+    const nutrition = recipe.nutrition_facts?.[0] || null;
+
+    // ✅ แปลงข้อมูลให้ frontend ใช้งานง่ายขึ้น
+    const formattedRecipe = {
+      id: recipe.id,
+      title: recipe.title,
+      description: recipe.description,
+      instructions: Array.isArray(recipe.instructions)
+        ? recipe.instructions
+        : JSON.parse(recipe.instructions || "[]"),
+      image_url: recipe.image_url,
+      cook_time: recipe.cook_time,
+      rating: recipe.rating,
+      created_at: recipe.created_at,
+
+      // ✅ ใช้ Optional Chaining + Nullish Coalescing เพื่อป้องกัน Error
+      nutrition_facts: nutrition
+        ? {
+            calories: nutrition?.calories ?? null,
+            total_fat: nutrition?.total_fat ?? null,
+            saturated_fat: nutrition?.saturated_fat ?? null,
+            cholesterol: nutrition?.cholesterol ?? null,
+            sodium: nutrition?.sodium ?? null,
+            potassium: nutrition?.potassium ?? null,
+            total_carbohydrate: nutrition?.total_carbohydrate ?? null,
+            sugars: nutrition?.sugars ?? null,
+            protein: nutrition?.protein ?? null,
+          }
+        : null,
+
+      // ✅ ดึงหมวดหมู่ (categories)
+      categories: recipe.recipe_categories.map(rc => ({
+        id: rc.category.id,
+        name: rc.category.name,
+        image_url: rc.category.image_url,
+      })),
+
+      // ✅ ดึง ingredients และป้องกัน errors
+      ingredients: recipe.recipe_ingredients.map(ri => ({
+        id: ri.ingredients?.id ?? null,
+        name: ri.ingredients?.name ?? "Unknown",
+        unit: ri.ingredients?.unit ?? "",
+        quantity: ri.quantity ?? 0,
+      })),
+    };
+
+    res.status(200).json({ success: true, data: formattedRecipe });
   } catch (error: any) {
     res.status(500).json({ success: false, message: "Error fetching recipe", error: error.message });
   }
 };
+
+
+
+
+
 
 // ✅ GET /api/recipes/search?title=...&category=...&ingredient=...
 export const searchRecipes = async (req: Request, res: Response) => {
