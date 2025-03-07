@@ -10,6 +10,7 @@ import recipesRoutes from "./routes/recipe.route";
 import shoppingListItemsRoutes from "./routes/shoppingListItem.routes";
 import shoppingListsRoutes from "./routes/shoppingList.routes";
 import usersRoutes from "./routes/user.route";
+import savedRecipesRoutes from "./routes/savedRecipes.routes";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use("/api/recipes", recipesRoutes);
 app.use("/api/shopping-list-items", shoppingListItemsRoutes);
 app.use("/api/shopping-lists", shoppingListsRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/saved-recipes", savedRecipesRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
