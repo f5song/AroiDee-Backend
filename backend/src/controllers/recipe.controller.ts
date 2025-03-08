@@ -195,6 +195,74 @@ export const getRecipeById = async (req: Request, res: Response) => {
 
 
 
+/**
+ * ✅ ดึงสูตรอาหารทั้งหมดของผู้ใช้ที่ล็อกอิน
+ * @route GET /api/recipes/user/:user_id
+ */
+export const getRecipesByUserId = async (req: Request, res: Response) => {
+  try {
+    console.log("🔍 User ID from request:", req.params.user_id); // ✅ Debug
+
+    const userId = Number(req.params.user_id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
+
+    // ✅ ดึงข้อมูลสูตรอาหารที่ user เป็นเจ้าของ
+    const recipes = await prisma.recipes.findMany({
+      where: { user_id: userId },
+      include: {
+        nutrition_facts: true, // ✅ ดึงข้อมูลโภชนาการ
+        recipe_categories: {
+          include: { category: true }, // ✅ ดึงหมวดหมู่
+        },
+        recipe_ingredients: {
+          include: { ingredients: true }, // ✅ ดึงส่วนผสม
+        },
+      },
+      orderBy: { created_at: "desc" }, // ✅ เรียงลำดับจากใหม่ไปเก่า
+    });
+
+    if (!recipes.length) {
+      return res.status(404).json({ success: false, message: "No recipes found for this user" });
+    }
+
+    // ✅ แปลงข้อมูลให้ frontend ใช้งานง่ายขึ้น
+    const formattedRecipes = recipes.map((recipe) => ({
+      id: recipe.id,
+      title: recipe.title,
+      description: recipe.description,
+      instructions: Array.isArray(recipe.instructions) ? recipe.instructions : [],
+      image_url: recipe.image_url,
+      cook_time: recipe.cook_time,
+      rating: recipe.rating,
+      created_at: recipe.created_at,
+
+      // ✅ ดึงค่าจาก `nutrition_facts`
+      nutrition_facts: recipe.nutrition_facts?.[0] ?? null,
+
+      // ✅ ดึงหมวดหมู่ (categories)
+      categories: recipe.recipe_categories.map((rc) => ({
+        id: rc.category.id,
+        name: rc.category.name,
+        image_url: rc.category.image_url,
+      })),
+
+      // ✅ ดึง ingredients และป้องกัน errors
+      ingredients: recipe.recipe_ingredients.map((ri) => ({
+        id: ri.ingredients?.id ?? null,
+        name: ri.ingredients?.name ?? "Unknown",
+        unit: ri.ingredients?.unit ?? "",
+        quantity: ri.quantity ?? 0,
+      })),
+    }));
+
+    res.status(200).json({ success: true, data: formattedRecipes });
+  } catch (error: any) {
+    console.error("Error fetching user recipes:", error);
+    res.status(500).json({ success: false, message: "Error fetching user recipes", error: error.message });
+  }
+};
 
 
 

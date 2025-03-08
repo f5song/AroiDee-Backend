@@ -7,6 +7,7 @@ import {
   searchRecipes,
   updateRecipe,
   deleteRecipe,
+  getRecipesByUserId
 } from "../controllers/recipe.controller";
 import authMiddleware from "../middlewares/authMiddleware"; // ✅ ใช้ Default Import ถ้า Export แบบ `export default`
 
@@ -57,10 +58,20 @@ router.put("/:id", authMiddleware, asyncHandler(async (req: Request, res: Respon
   }
 }));
 
+
 // ✅ DELETE /api/recipes/:id - ลบสูตรอาหาร (ต้องล็อกอินก่อน)
 router.delete("/:id", authMiddleware, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     await deleteRecipe(req, res);
+  } catch (error) {
+    next(error);
+  }
+}));
+
+// ✅ GET /api/recipes/user/:user_id - ดึงสูตรอาหารของผู้ใช้ (ต้องล็อกอินก่อน)
+router.get("/user/:user_id", authMiddleware, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await getRecipesByUserId(req, res);
   } catch (error) {
     next(error);
   }
