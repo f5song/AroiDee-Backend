@@ -108,21 +108,22 @@ export const getAllRecipes = async (req: Request, res: Response) => {
 
 
 
-
 export const getRecipeById = async (req: Request, res: Response) => {
   try {
-
     console.log("🔍 Recipe ID from request:", req.params.id); // ✅ Debug
-    
+
     const recipeId = Number(req.params.id);
     if (isNaN(recipeId)) {
       return res.status(400).json({ success: false, message: "Invalid recipe ID" });
     }
 
-    // ✅ ดึงข้อมูลจากฐานข้อมูล
+    // ✅ ดึงข้อมูลจากฐานข้อมูล พร้อมดึง `users` (ผู้สร้างสูตร)
     const recipe = await prisma.recipes.findUnique({
       where: { id: recipeId },
       include: {
+        user: { // ✅ ดึงข้อมูลผู้ใช้
+          select: { id: true, username: true }, // ดึงเฉพาะ `id` และ `username`
+        },
         nutrition_facts: true, // ✅ ดึงข้อมูลโภชนาการ
         recipe_categories: {
           include: { category: true }, // ✅ ดึงหมวดหมู่
@@ -155,6 +156,12 @@ export const getRecipeById = async (req: Request, res: Response) => {
       cook_time: recipe.cook_time,
       rating: recipe.rating,
       created_at: recipe.created_at,
+
+      // ✅ เพิ่มข้อมูลผู้สร้างสูตรอาหาร
+      author: {
+        id: recipe.user?.id ?? null,
+        username: recipe.user?.username ?? "Unknown", // ถ้าไม่มี username ให้แสดง "Unknown"
+      },
 
       // ✅ ดึงค่าจาก `nutrition_facts`
       nutrition_facts: nutrition
@@ -192,7 +199,6 @@ export const getRecipeById = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Error fetching recipe", error: error.message });
   }
 };
-
 
 
 /**
