@@ -17,13 +17,17 @@ router.post("/save-recipe", asyncHandler(async (req: Request, res: Response, nex
 }));
 
 // ✅ API สำหรับยกเลิกการบันทึกสูตรอาหาร
-router.post("/unsave-recipe", asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await unsaveRecipe(req, res);
-  } catch (error) {
-    next(error);  // ส่ง error ไปที่ next
-  }
-}));
+router.post(
+  "/unsave-recipe",
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await unsaveRecipe(req, res);
+    } catch (error) {
+      next(error);
+    }
+  })
+);
+
 
 // ✅ API สำหรับดึงรายการสูตรที่ผู้ใช้บันทึก
 router.get("/:user_id/saved-recipes", asyncHandler(async (req: Request, res: Response, next: NextFunction) => {

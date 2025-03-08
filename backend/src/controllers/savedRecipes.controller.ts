@@ -36,20 +36,45 @@ export const unsaveRecipe = async (req: Request, res: Response): Promise<Respons
   try {
     const { user_id, recipe_id } = req.body;
 
+    // ✅ ตรวจสอบว่ามีค่า `user_id` และ `recipe_id` ครบหรือไม่
     if (!user_id || !recipe_id) {
       return res.status(400).json({ success: false, message: "Missing user_id or recipe_id" });
     }
 
-    await prisma.saved_recipes.deleteMany({
-      where: { user_id, recipe_id },
+    // ✅ Debug ข้อมูลที่ได้รับ
+    console.log("🛠 Unsave Recipe Request:", { user_id, recipe_id });
+
+    // ✅ ตรวจสอบว่ามีเรคคอร์ดที่ต้องลบหรือไม่
+    const existingRecord = await prisma.saved_recipes.findFirst({
+      where: { user_id: Number(user_id), recipe_id: Number(recipe_id) },
     });
+
+    if (!existingRecord) {
+      return res.status(404).json({ success: false, message: "Recipe not found in saved list" });
+    }
+
+    // ✅ ลบข้อมูลออกจาก `saved_recipes`
+    await prisma.saved_recipes.deleteMany({
+      where: { user_id: Number(user_id), recipe_id: Number(recipe_id) },
+    });
+
+    // ✅ ตรวจสอบว่าข้อมูลถูกลบออกจากฐานข้อมูลหรือไม่
+    const checkAfterDelete = await prisma.saved_recipes.findFirst({
+      where: { user_id: Number(user_id), recipe_id: Number(recipe_id) },
+    });
+
+    if (checkAfterDelete) {
+      console.error("❌ Recipe still exists after deletion:", checkAfterDelete);
+      return res.status(500).json({ success: false, message: "Failed to remove recipe from saved list" });
+    }
 
     return res.json({ success: true, message: "Recipe unsaved successfully" });
   } catch (error) {
-    console.error("Error unsaving recipe:", error);
+    console.error("❌ Error unsaving recipe:", error);
     return res.status(500).json({ success: false, message: "Failed to unsave recipe" });
   }
 };
+
 
 // ✅ API ดึงรายการสูตรอาหารที่ผู้ใช้บันทึก
 export const getSavedRecipes = async (req: Request, res: Response): Promise<Response> => {
