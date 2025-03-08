@@ -8,33 +8,21 @@ export const saveRecipe = async (req: Request, res: Response): Promise<Response>
   try {
     const { user_id, recipe_id } = req.body;
 
-    console.log("📌 Save Recipe Request:", { user_id, recipe_id }); // Debug
+    console.log("📌 API Received Request:", { user_id, recipe_id }); // Debug
 
     if (!user_id || !recipe_id) {
       return res.status(400).json({ success: false, message: "Missing user_id or recipe_id" });
     }
 
-    // ตรวจสอบว่า user และ recipe มีอยู่จริงหรือไม่
-    const userExists = await prisma.users.findUnique({ where: { id: Number(user_id) } });
-    const recipeExists = await prisma.recipes.findUnique({ where: { id: Number(recipe_id) } });
+    const userId = Number(user_id);
+    const recipeId = Number(recipe_id);
 
-    if (!userExists) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-    if (!recipeExists) {
-      return res.status(404).json({ success: false, message: "Recipe not found" });
+    if (isNaN(userId) || isNaN(recipeId)) {
+      return res.status(400).json({ success: false, message: "Invalid user_id or recipe_id" });
     }
 
-    // ตรวจสอบว่าเคยบันทึกไปแล้วหรือยัง
-    const existing = await prisma.saved_recipes.findFirst({ where: { user_id, recipe_id } });
-
-    if (existing) {
-      return res.status(400).json({ success: false, message: "Recipe already saved" });
-    }
-
-    // บันทึกสูตรอาหาร
     const saved = await prisma.saved_recipes.create({
-      data: { user_id, recipe_id },
+      data: { user_id: userId, recipe_id: recipeId },
     });
 
     console.log("✅ Recipe saved successfully:", saved);
@@ -44,6 +32,7 @@ export const saveRecipe = async (req: Request, res: Response): Promise<Response>
     return res.status(500).json({ success: false, message: "Failed to save recipe" });
   }
 };
+
 
 
 // ✅ API ยกเลิกการบันทึกสูตรอาหาร
