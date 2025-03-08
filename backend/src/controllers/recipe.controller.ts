@@ -239,7 +239,8 @@ export const getRecipesByUserId = async (req: Request, res: Response) => {
       created_at: recipe.created_at,
 
       // ✅ ดึงค่าจาก `nutrition_facts`
-      nutrition_facts: recipe.nutrition_facts?.[0] ?? null,
+      calories: recipe.nutrition_facts?.[0]?.calories ?? null, // ✅ ดึง calories
+      nutrition_facts: recipe.nutrition_facts?.[0] ?? null, // ✅ ดึงโภชนาการทั้งหมด
 
       // ✅ ดึงหมวดหมู่ (categories)
       categories: recipe.recipe_categories.map((rc) => ({
@@ -263,6 +264,7 @@ export const getRecipesByUserId = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Error fetching user recipes", error: error.message });
   }
 };
+
 
 
 
