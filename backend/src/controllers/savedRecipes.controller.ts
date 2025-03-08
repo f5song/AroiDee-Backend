@@ -8,66 +8,65 @@ export const saveRecipe = async (req: Request, res: Response): Promise<Response>
   try {
     const { user_id, recipe_id } = req.body;
 
-    console.log("📌 API Received Request:", { user_id, recipe_id }); // Debug
+    console.log("📌 [SAVE] Request received:", { user_id, recipe_id });
 
     if (!user_id || !recipe_id) {
       return res.status(400).json({ success: false, message: "Missing user_id or recipe_id" });
     }
 
-    const userId = Number(user_id);
-    const recipeId = Number(recipe_id);
+    const existing = await prisma.saved_recipes.findFirst({
+      where: { user_id, recipe_id },
+    });
 
-    if (isNaN(userId) || isNaN(recipeId)) {
-      return res.status(400).json({ success: false, message: "Invalid user_id or recipe_id" });
+    if (existing) {
+      console.log("⚠️ [SAVE] Recipe already saved:", existing);
+      return res.status(400).json({ success: false, message: "Recipe already saved" });
     }
 
     const saved = await prisma.saved_recipes.create({
-      data: { user_id: userId, recipe_id: recipeId },
+      data: { user_id, recipe_id },
     });
 
-    console.log("✅ Recipe saved successfully:", saved);
+    console.log("✅ [SAVE] Recipe saved successfully:", saved);
     return res.json({ success: true, saved });
   } catch (error) {
-    console.error("❌ Error saving recipe:", error);
+    console.error("❌ [SAVE] Error saving recipe:", error);
     return res.status(500).json({ success: false, message: "Failed to save recipe" });
   }
 };
 
 
-
-// ✅ API ยกเลิกการบันทึกสูตรอาหาร
 export const unsaveRecipe = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { user_id, recipe_id } = req.body;
 
-    console.log("🛠 Unsave Recipe Request:", { user_id, recipe_id }); // Debug
+    console.log("📌 [UNSAVE] Request received:", { user_id, recipe_id });
 
     if (!user_id || !recipe_id) {
       return res.status(400).json({ success: false, message: "Missing user_id or recipe_id" });
     }
 
-    // ตรวจสอบว่าเรคคอร์ดมีอยู่จริงหรือไม่
-    const existingRecord = await prisma.saved_recipes.findFirst({
-      where: { user_id: Number(user_id), recipe_id: Number(recipe_id) },
+    const existing = await prisma.saved_recipes.findFirst({
+      where: { user_id, recipe_id },
     });
 
-    if (!existingRecord) {
+    if (!existing) {
+      console.log("⚠️ [UNSAVE] Recipe not found:", { user_id, recipe_id });
       return res.status(404).json({ success: false, message: "Recipe not found in saved list" });
     }
 
-    // ลบข้อมูลออกจาก `saved_recipes`
     await prisma.saved_recipes.deleteMany({
-      where: { user_id: Number(user_id), recipe_id: Number(recipe_id) },
+      where: { user_id, recipe_id },
     });
 
-    console.log("✅ Recipe unsaved successfully:", { user_id, recipe_id });
-
+    console.log("✅ [UNSAVE] Recipe unsaved successfully:", { user_id, recipe_id });
     return res.json({ success: true, message: "Recipe unsaved successfully" });
   } catch (error) {
-    console.error("❌ Error unsaving recipe:", error);
+    console.error("❌ [UNSAVE] Error unsaving recipe:", error);
     return res.status(500).json({ success: false, message: "Failed to unsave recipe" });
   }
 };
+
 
 
 
