@@ -158,35 +158,36 @@ export const deleteUserById = async (req: AuthenticatedRequest, res: Response): 
 
 
 // POST /api/login - เข้าสู่ระบบผู้ใช้
-
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body; // ✅ เปลี่ยน email เป็น identifier (email หรือ username)
 
-    if (!email || !password) {
-      res.status(400).json({ success: false, message: "กรุณากรอกอีเมลและรหัสผ่าน" });
+    if (!identifier || !password) {
+      res.status(400).json({ success: false, message: "กรุณากรอกชื่อผู้ใช้/อีเมลและรหัสผ่าน" });
       return;
     }
 
-    // ✅ ค้นหาผู้ใช้ในฐานข้อมูล (ไม่มี `role`)
-    const user = await prisma.users.findUnique({
-      where: { email },
-      select: { id: true, username: true, email: true, password_hash: true }, // ✅ เพิ่ม password_hash
-    });    
+    // ✅ ค้นหาผู้ใช้จาก email หรือ username
+    const user = await prisma.users.findFirst({
+      where: {
+        OR: [{ email: identifier }, { username: identifier }],
+      },
+      select: { id: true, username: true, email: true, password_hash: true },
+    });
 
     if (!user) {
-      res.status(401).json({ success: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+      res.status(401).json({ success: false, message: "ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง" });
       return;
     }
 
     // ✅ ตรวจสอบรหัสผ่าน
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
-      res.status(401).json({ success: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+      res.status(401).json({ success: false, message: "ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง" });
       return;
     }
 
-    // ✅ ลบ `role` ออกจาก JWT Token
+    // ✅ สร้าง Token
     const token = createToken({ id: user.id, email: user.email });
 
     res.json({
