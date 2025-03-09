@@ -6,13 +6,38 @@ const prisma = new PrismaClient();
 // ✅ POST /api/recipes - สร้างสูตรอาหารใหม่
 export const createRecipe = async (req: Request, res: Response) => {
   try {
+    const { user_id, category_id, title, description, instructions, image_url, cook_time } =
+      req.body;
+
+    // ✅ ตรวจสอบค่าที่จำเป็น
+    if (!user_id || !title || !instructions) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: user_id, title, instructions",
+      });
+    }
+
+    // ✅ บันทึกลงใน Database
     const newRecipe = await prisma.recipes.create({
-      data: req.body, // ตรวจสอบให้แน่ใจว่า req.body มีค่าที่ถูกต้อง
+      data: {
+        user_id,
+        category_id: category_id || null,
+        title,
+        description: description || "",
+        instructions: JSON.stringify(instructions), // ✅ แปลง instructions เป็น JSON ก่อนบันทึก
+        image_url: image_url || null,
+        cook_time: cook_time || 0,
+      },
     });
 
-    res.status(201).json({ success: true, data: newRecipe });
+    res.status(201).json({
+      success: true,
+      message: "Recipe created successfully",
+      recipe: newRecipe,
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: "Error creating recipe", error: error.message });
+    console.error("Error creating recipe:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

@@ -40,14 +40,13 @@ router.get("/:id", asyncHandler(async (req, res, next) => {
   }
 }));
 
-// ✅ POST /api/recipes - สร้างสูตรอาหารใหม่ (ต้องล็อกอินก่อน)
-router.post("/", authMiddleware, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
+router.post(
+  "/create",
+  authMiddleware, // ✅ ต้องล็อกอินก่อน
+  asyncHandler(async (req, res) => {
     await createRecipe(req, res);
-  } catch (error) {
-    next(error);
-  }
-}));
+  })
+);
 
 // ✅ PUT /api/recipes/:id - อัปเดตข้อมูลสูตรอาหาร (ต้องล็อกอินก่อน)
 router.put("/:id", authMiddleware, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
