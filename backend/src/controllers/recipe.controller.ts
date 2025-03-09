@@ -3,47 +3,65 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+
+// ✅ POST /api/recipes - สร้างสูตรอาหารใหม่
 export const createRecipe = async (req: Request, res: Response) => {
   try {
-    const { user_id, category_id, title, description, instructions, image_url, cook_time, ingredients, nutrition_facts } = req.body;
+    const { 
+      user_id, 
+      category_id, 
+      title, 
+      description, 
+      instructions, 
+      image_url, 
+      cook_time, 
+      ingredients, 
+      nutrition_facts 
+    } = req.body;
 
     // ✅ ตรวจสอบค่าที่จำเป็น
-    if (!user_id || !title || !instructions) {
+    if (!user_id || !title || !instructions || !ingredients) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: user_id, title, instructions",
+        message: "Missing required fields: user_id, title, instructions, ingredients",
       });
     }
 
-    // ✅ บันทึกลงใน Database พร้อม relation ต่างๆ
+    // ✅ แปลงค่า JSON ก่อนบันทึก
+    const parsedInstructions = Array.isArray(instructions) ? instructions : JSON.parse(instructions);
+    const parsedIngredients = Array.isArray(ingredients) ? ingredients : JSON.parse(ingredients);
+
+    // ✅ บันทึกสูตรอาหารลงในฐานข้อมูล
     const newRecipe = await prisma.recipes.create({
       data: {
         user_id,
         category_id: category_id || null,
         title,
         description: description || "",
-        instructions: JSON.stringify(instructions),
+        instructions: parsedInstructions, // ✅ บันทึก instructions เป็น JSON Array
         image_url: image_url || null,
         cook_time: cook_time || 0,
 
-        // ✅ บันทึก Nutrition Facts
-        nutrition_facts: {
-          create: {
-            calories: nutrition_facts.calories || 0,
-            total_fat: nutrition_facts.total_fat || 0,
-            saturated_fat: nutrition_facts.saturated_fat || 0,
-            cholesterol: nutrition_facts.cholesterol || 0,
-            sodium: nutrition_facts.sodium || 0,
-            potassium: nutrition_facts.potassium || 0,
-            total_carbohydrate: nutrition_facts.total_carbohydrate || 0,
-            sugars: nutrition_facts.sugars || 0,
-            protein: nutrition_facts.protein || 0,
-          },
-        },
+        // ✅ บันทึก Nutrition Facts (ถ้ามี)
+        nutrition_facts: nutrition_facts
+          ? {
+              create: {
+                calories: nutrition_facts.calories || 0,
+                total_fat: nutrition_facts.total_fat || 0,
+                saturated_fat: nutrition_facts.saturated_fat || 0,
+                cholesterol: nutrition_facts.cholesterol || 0,
+                sodium: nutrition_facts.sodium || 0,
+                potassium: nutrition_facts.potassium || 0,
+                total_carbohydrate: nutrition_facts.total_carbohydrate || 0,
+                sugars: nutrition_facts.sugars || 0,
+                protein: nutrition_facts.protein || 0,
+              },
+            }
+          : undefined,
 
-        // ✅ บันทึก Ingredients
+        // ✅ บันทึก Ingredients (ใช้ connectOrCreate เพื่อป้องกันซ้ำ)
         recipe_ingredients: {
-          create: ingredients.map((ingredient: any) => ({
+          create: parsedIngredients.map((ingredient: any) => ({
             quantity: ingredient.amount,
             ingredients: {
               connectOrCreate: {
@@ -54,10 +72,12 @@ export const createRecipe = async (req: Request, res: Response) => {
           })),
         },
 
-        // ✅ บันทึก Category
-        recipe_categories: {
-          create: category_id ? [{ category: { connect: { id: category_id } } }] : [],
-        },
+        // ✅ บันทึก Categories (ถ้ามี)
+        recipe_categories: category_id
+          ? {
+              create: [{ category: { connect: { id: category_id } } }],
+            }
+          : undefined,
       },
     });
 
@@ -67,8 +87,8 @@ export const createRecipe = async (req: Request, res: Response) => {
       recipe: newRecipe,
     });
   } catch (error: any) {
-    console.error("Error creating recipe:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error creating recipe:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
