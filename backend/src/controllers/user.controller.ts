@@ -85,6 +85,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
         username: true,
         email: true,
         created_at: true,
+        image_url: true, // ✅ ดึงข้อมูล image_url มาด้วย
       },
     });
 
@@ -98,6 +99,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     res.status(500).json({ success: false, message: "Error fetching profile", error: error.message });
   }
 };
+
 
 
 // ✅ PUT /api/users/profile - อัปเดตข้อมูลโปรไฟล์
