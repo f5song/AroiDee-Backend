@@ -3,11 +3,9 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// ✅ POST /api/recipes - สร้างสูตรอาหารใหม่
 export const createRecipe = async (req: Request, res: Response) => {
   try {
-    const { user_id, category_id, title, description, instructions, image_url, cook_time } =
-      req.body;
+    const { user_id, category_id, title, description, instructions, image_url, cook_time, ingredients, nutrition_facts } = req.body;
 
     // ✅ ตรวจสอบค่าที่จำเป็น
     if (!user_id || !title || !instructions) {
@@ -17,16 +15,49 @@ export const createRecipe = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ บันทึกลงใน Database
+    // ✅ บันทึกลงใน Database พร้อม relation ต่างๆ
     const newRecipe = await prisma.recipes.create({
       data: {
         user_id,
         category_id: category_id || null,
         title,
         description: description || "",
-        instructions: JSON.stringify(instructions), // ✅ แปลง instructions เป็น JSON ก่อนบันทึก
+        instructions: JSON.stringify(instructions),
         image_url: image_url || null,
         cook_time: cook_time || 0,
+
+        // ✅ บันทึก Nutrition Facts
+        nutrition_facts: {
+          create: {
+            calories: nutrition_facts.calories || 0,
+            total_fat: nutrition_facts.total_fat || 0,
+            saturated_fat: nutrition_facts.saturated_fat || 0,
+            cholesterol: nutrition_facts.cholesterol || 0,
+            sodium: nutrition_facts.sodium || 0,
+            potassium: nutrition_facts.potassium || 0,
+            total_carbohydrate: nutrition_facts.total_carbohydrate || 0,
+            sugars: nutrition_facts.sugars || 0,
+            protein: nutrition_facts.protein || 0,
+          },
+        },
+
+        // ✅ บันทึก Ingredients
+        recipe_ingredients: {
+          create: ingredients.map((ingredient: any) => ({
+            quantity: ingredient.amount,
+            ingredients: {
+              connectOrCreate: {
+                where: { name: ingredient.name },
+                create: { name: ingredient.name, unit: ingredient.unit },
+              },
+            },
+          })),
+        },
+
+        // ✅ บันทึก Category
+        recipe_categories: {
+          create: category_id ? [{ category: { connect: { id: category_id } } }] : [],
+        },
       },
     });
 
@@ -40,6 +71,7 @@ export const createRecipe = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // ✅ GET /api/recipes - รองรับ sort=calories-low และ calories-high
 export const getAllRecipes = async (req: Request, res: Response) => {
