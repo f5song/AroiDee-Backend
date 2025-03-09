@@ -33,3 +33,10 @@ app.use("/api/saved-recipes", savedRecipesRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+
+app.use(cors({
+  origin: "https://aroi-dee-frontend.vercel.app",
+  methods: "GET,POST",
+  allowedHeaders: "Content-Type,Authorization"
+}));
