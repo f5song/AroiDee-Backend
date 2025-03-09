@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 
 // ✅ POST /api/recipes - สร้างสูตรอาหารใหม่
+// ✅ POST /api/recipes - สร้างสูตรอาหารใหม่
 export const createRecipe = async (req: Request, res: Response) => {
   try {
     const { 
@@ -27,25 +28,9 @@ export const createRecipe = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ แปลง JSON และตรวจสอบข้อผิดพลาด
-    let parsedInstructions = [];
-    let parsedIngredients = [];
-
-    try {
-      parsedInstructions = Array.isArray(instructions)
-        ? instructions
-        : JSON.parse(instructions);
-    } catch (error) {
-      return res.status(400).json({ success: false, message: "Invalid instructions format" });
-    }
-
-    try {
-      parsedIngredients = Array.isArray(ingredients)
-        ? ingredients
-        : JSON.parse(ingredients);
-    } catch (error) {
-      return res.status(400).json({ success: false, message: "Invalid ingredients format" });
-    }
+    // ✅ แปลงค่า JSON ก่อนบันทึก
+    const parsedInstructions = Array.isArray(instructions) ? instructions : JSON.parse(instructions);
+    const parsedIngredients = Array.isArray(ingredients) ? ingredients : JSON.parse(ingredients);
 
     // ✅ บันทึกสูตรอาหารลงในฐานข้อมูล
     const newRecipe = await prisma.recipes.create({
@@ -62,33 +47,31 @@ export const createRecipe = async (req: Request, res: Response) => {
         nutrition_facts: nutrition_facts
           ? {
               create: {
-                calories: nutrition_facts.calories ?? 0,
-                total_fat: nutrition_facts.total_fat ?? 0,
-                saturated_fat: nutrition_facts.saturated_fat ?? 0,
-                cholesterol: nutrition_facts.cholesterol ?? 0,
-                sodium: nutrition_facts.sodium ?? 0,
-                potassium: nutrition_facts.potassium ?? 0,
-                total_carbohydrate: nutrition_facts.total_carbohydrate ?? 0,
-                sugars: nutrition_facts.sugars ?? 0,
-                protein: nutrition_facts.protein ?? 0,
+                calories: nutrition_facts.calories || 0,
+                total_fat: nutrition_facts.total_fat || 0,
+                saturated_fat: nutrition_facts.saturated_fat || 0,
+                cholesterol: nutrition_facts.cholesterol || 0,
+                sodium: nutrition_facts.sodium || 0,
+                potassium: nutrition_facts.potassium || 0,
+                total_carbohydrate: nutrition_facts.total_carbohydrate || 0,
+                sugars: nutrition_facts.sugars || 0,
+                protein: nutrition_facts.protein || 0,
               },
             }
           : undefined,
 
         // ✅ บันทึก Ingredients (ใช้ connectOrCreate เพื่อป้องกันซ้ำ)
-        recipe_ingredients: parsedIngredients.length > 0
-          ? {
-              create: parsedIngredients.map((ingredient: any) => ({
-                quantity: ingredient.amount,
-                ingredients: {
-                  connectOrCreate: {
-                    where: { name: ingredient.name },
-                    create: { name: ingredient.name, unit: ingredient.unit },
-                  },
-                },
-              })),
-            }
-          : undefined,
+        recipe_ingredients: {
+          create: parsedIngredients.map((ingredient: any) => ({
+            quantity: ingredient.amount,
+            ingredients: {
+              connectOrCreate: {
+                where: { name: ingredient.name },
+                create: { name: ingredient.name, unit: ingredient.unit },
+              },
+            },
+          })),
+        },
 
         // ✅ บันทึก Categories (ถ้ามี)
         recipe_categories: category_id
