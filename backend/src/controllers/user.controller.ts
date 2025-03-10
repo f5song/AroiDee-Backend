@@ -204,3 +204,41 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 
+// ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
+export const uploadAvatar = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Not authorized" });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ success: false, message: "No file uploaded" });
+      return;
+    }
+
+    // ✅ อัพเดทข้อมูล image_url ในฐานข้อมูล
+    const updatedUser = await prisma.users.update({
+      where: { id: req.user.id },
+      data: { image_url: req.file.path },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        image_url: true,
+        created_at: true
+      }
+    });
+
+    // ✅ ส่งค่ากลับไปยัง frontend
+    res.json({ 
+      success: true, 
+      message: "Profile picture updated successfully", 
+      imageUrl: updatedUser.image_url,
+      user: updatedUser
+    });
+  } catch (error: any) {
+    console.error("Error uploading avatar:", error);
+    res.status(500).json({ success: false, message: "Error uploading avatar", error: error.message });
+  }
+};
