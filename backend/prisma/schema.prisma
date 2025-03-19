@@ -97,9 +97,14 @@ model users {
   id             Int              @id @default(autoincrement())
   username       String
   email          String           @unique
-  password_hash  String
+  password_hash  String?          // เปลี่ยนเป็น nullable เพื่อรองรับผู้ใช้ที่ล็อกอินด้วย Google
   created_at     DateTime         @default(now())
   image_url      String?
+  
+  // เพิ่มฟิลด์สำหรับ Google Authentication
+  google_id      String?          @unique
+  provider       String?          // 'email', 'google', etc.
+  
   recipes        recipes[]
   saved_recipes  saved_recipes[]
   shopping_lists shopping_lists[]

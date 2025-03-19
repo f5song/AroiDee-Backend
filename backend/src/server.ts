@@ -15,12 +15,18 @@ import savedRecipesRoutes from "./routes/savedRecipes.routes";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS configuration - อัปเดตให้รองรับ localhost:5173
+app.use(cors({
+  origin: ["https://aroi-dee-frontend.vercel.app", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 
-// ✅ Add prefix `/api` to all routes
+// Add prefix `/api` to all routes
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/ingredients", ingredientsRoutes);
 app.use("/api/nutrition-facts", nutritionFactsRoutes);
@@ -33,10 +39,3 @@ app.use("/api/saved-recipes", savedRecipesRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-
-app.use(cors({
-  origin: "https://aroi-dee-frontend.vercel.app",
-  methods: "GET,POST",
-  allowedHeaders: "Content-Type,Authorization"
-}));
