@@ -17,6 +17,7 @@ interface GoogleUserInfo {
 export const googleLogin = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.body;
+    console.log("🔹 Google Token ที่ได้รับจาก Frontend:", token);
 
     if (!token) {
       res.status(400).json({ success: false, message: "ไม่พบ Token" });
