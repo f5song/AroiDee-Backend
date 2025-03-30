@@ -25,13 +25,11 @@ export const fetchUsers = async (
 
     res.json({ success: true, data: users });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching users",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching users",
+      error: error.message,
+    });
   }
 };
 
@@ -76,21 +74,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
     });
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "User registered successfully",
-        user: newUser,
-      });
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: newUser,
+    });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error registering user",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error registering user",
+      error: error.message,
+    });
   }
 };
 
@@ -123,13 +117,11 @@ export const getUserProfile = async (
 
     res.json({ success: true, user: userProfile });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching profile",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching profile",
+      error: error.message,
+    });
   }
 };
 
@@ -163,13 +155,11 @@ export const updateUserProfile = async (
       user: updatedUser,
     });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error updating profile",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error updating profile",
+      error: error.message,
+    });
   }
 };
 
@@ -203,13 +193,11 @@ export const deleteUserById = async (
 
     res.json({ success: true, message: "User deleted successfully" });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting user",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting user",
+      error: error.message,
+    });
   }
 };
 
@@ -219,12 +207,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { identifier, password } = req.body; // ✅ เปลี่ยน email เป็น identifier (email หรือ username)
 
     if (!identifier || !password) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "กรุณากรอกชื่อผู้ใช้/อีเมลและรหัสผ่าน",
-        });
+      res.status(400).json({
+        success: false,
+        message: "กรุณากรอกชื่อผู้ใช้/อีเมลและรหัสผ่าน",
+      });
       return;
     }
 
@@ -237,24 +223,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!user) {
-      res
-        .status(401)
-        .json({
-          success: false,
-          message: "ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง",
-        });
+      res.status(401).json({
+        success: false,
+        message: "ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง",
+      });
       return;
     }
 
     // ✅ ตรวจสอบรหัสผ่าน
     const isPasswordValid = await bcrypt.compare(password, user.password_hash!);
     if (!isPasswordValid) {
-      res
-        .status(401)
-        .json({
-          success: false,
-          message: "ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง",
-        });
+      res.status(401).json({
+        success: false,
+        message: "ชื่อผู้ใช้/อีเมล หรือรหัสผ่านไม่ถูกต้อง",
+      });
       return;
     }
 
@@ -268,16 +250,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       token,
     });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
+      error: error.message,
+    });
   }
 };
 
+// ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
 // ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
 export const uploadAvatar = async (
   req: AuthenticatedRequest,
@@ -294,10 +275,13 @@ export const uploadAvatar = async (
       return;
     }
 
+    // ใช้ค่าดีฟอลต์เป็น "" ถ้าค่าของ req.file?.path เป็น null
+    const imageUrl = req.file?.path ?? "";
+
     // ✅ อัพเดทข้อมูล image_url ในฐานข้อมูล
     const updatedUser = await prisma.users.update({
       where: { id: req.user.id },
-      data: { image_url: req.file?.path ?? "" },
+      data: { image_url: imageUrl },
       select: {
         id: true,
         username: true,
@@ -316,12 +300,10 @@ export const uploadAvatar = async (
     });
   } catch (error: any) {
     console.error("Error uploading avatar:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error uploading avatar",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error uploading avatar",
+      error: error.message,
+    });
   }
 };
