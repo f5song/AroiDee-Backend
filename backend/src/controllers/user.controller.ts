@@ -247,7 +247,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // ✅ ตรวจสอบรหัสผ่าน
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash!);
     if (!isPasswordValid) {
       res
         .status(401)
