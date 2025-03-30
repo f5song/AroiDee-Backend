@@ -220,7 +220,7 @@ export const uploadAvatar = async (req: AuthenticatedRequest, res: Response): Pr
     // ✅ อัพเดทข้อมูล image_url ในฐานข้อมูล
     const updatedUser = await prisma.users.update({
       where: { id: req.user.id },
-      data: { image_url: req.file?.path ?? "" },
+      data: { image_url: (req.file?.path ?? "") as string },
       select: {
         id: true,
         username: true,
