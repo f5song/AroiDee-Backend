@@ -8,7 +8,7 @@ import {
   login,
   uploadAvatar
 } from "../controllers/user.controller";
-import { googleLogin } from "../controllers/googleAuth.controller";
+// import { googleLogin } from "../controllers/googleAuth.controller";
 import authMiddleware from "../middlewares/authMiddleware";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
@@ -48,6 +48,6 @@ router.post("/login", login);
 router.post("/upload-avatar", authMiddleware, upload.single("avatar"), uploadAvatar);
 
 // เพิ่มเส้นทางสำหรับ Google Login
-router.post("/google-login", googleLogin);
+// router.post("/google-login", googleLogin);
 
 export default router;
