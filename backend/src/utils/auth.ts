@@ -8,7 +8,7 @@ if (!SECRET_KEY) {
 }
 
 interface UserPayload {
-  id: number;
+  userId: number;
   email: string;
 }
 

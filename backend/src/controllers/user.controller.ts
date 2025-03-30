@@ -190,7 +190,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // ✅ สร้าง Token
-    const token = createToken({ id: user.id, email: user.email });
+    const token = createToken({ userId: user.id, email: user.email });
 
     res.json({
       success: true,
