@@ -21,10 +21,10 @@ const authMiddleware: RequestHandler = (req: AuthenticatedRequest, res: Response
     }
 
     // ถอดรหัส JWT token
-    const decoded = jwt.verify(token, SECRET_KEY) as { userId: number; email: string };
+    const decoded = jwt.verify(token, SECRET_KEY) as { id: number; email: string };
     
     // เพิ่มข้อมูลผู้ใช้ลงใน request object
-    req.user = { id: decoded.userId, email: decoded.email };
+    req.user = { id: decoded.id, email: decoded.email };
 
     next();
   } catch (error) {
