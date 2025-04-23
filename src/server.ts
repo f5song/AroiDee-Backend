@@ -19,9 +19,8 @@ const PORT = process.env.PORT || 3000;
 
 // CORS configuration - อัปเดตให้รองรับ localhost:5173
 app.use(cors({
-  origin: ["https://aroi-dee-frontend.vercel.app", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  origin: ["http://localhost:5173", "https://aroi-dee-frontend.vercel.app"],
+  credentials: true, // ✅ สำคัญมาก
 }));
 
 app.use(express.json());
