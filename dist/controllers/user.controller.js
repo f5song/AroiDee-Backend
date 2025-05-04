@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadAvatar = exports.login = exports.deleteUserById = exports.updateUserProfile = exports.getUserProfile = exports.register = exports.fetchUsers = void 0;
+exports.updateCalorieGoal = exports.uploadAvatar = exports.login = exports.deleteUserById = exports.updateUserProfile = exports.getUserProfile = exports.register = exports.fetchUsers = void 0;
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const auth_1 = require("../utils/auth"); // ✅ Import ฟังก์ชันสร้าง Token
@@ -104,7 +104,8 @@ const getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 username: true,
                 email: true,
                 created_at: true,
-                image_url: true, // ✅ ดึงข้อมูล image_url มาด้วย
+                image_url: true,
+                calories_goal: true,
             },
         });
         if (!userProfile) {
@@ -240,7 +241,6 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.login = login;
 // ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
-// ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
 const uploadAvatar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
@@ -284,3 +284,23 @@ const uploadAvatar = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.uploadAvatar = uploadAvatar;
+// ✅ PUT /api/users/:id/update-goals
+const updateCalorieGoal = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.params.id);
+    const { calories_goal } = req.body;
+    if (typeof calories_goal !== "number" || calories_goal <= 0) {
+        return res.status(400).json({ message: "Invalid calories_goal" });
+    }
+    try {
+        const updatedUser = yield prisma.users.update({
+            where: { id: userId },
+            data: { calories_goal },
+        });
+        return res.status(200).json({ success: true, user: updatedUser }); // ✅ return รูปแบบมาตรฐาน
+    }
+    catch (error) {
+        console.error("Failed to update calories_goal:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+exports.updateCalorieGoal = updateCalorieGoal;

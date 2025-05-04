@@ -25,7 +25,7 @@ cloudinary_1.v2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true
+    secure: true,
 });
 // ตั้งค่า Multer + Cloudinary
 const storage = new multer_storage_cloudinary_1.CloudinaryStorage({
@@ -39,7 +39,6 @@ const storage = new multer_storage_cloudinary_1.CloudinaryStorage({
     }),
 });
 const upload = (0, multer_1.default)({ storage });
-// เส้นทางเดิม
 router.get("/", user_controller_1.fetchUsers);
 router.post("/register", user_controller_1.register);
 router.get("/profile", authMiddleware_1.default, user_controller_1.getUserProfile);
@@ -47,6 +46,14 @@ router.put("/update", authMiddleware_1.default, user_controller_1.updateUserProf
 router.delete("/delete/:id", authMiddleware_1.default, user_controller_1.deleteUserById);
 router.post("/login", user_controller_1.login);
 router.post("/upload-avatar", authMiddleware_1.default, upload.single("avatar"), user_controller_1.uploadAvatar);
+router.put("/:id/update-goals", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield (0, user_controller_1.updateCalorieGoal)(req, res);
+    }
+    catch (error) {
+        res.status(500).json({ message: "Error updating calorie goal", error });
+    }
+}));
 // เพิ่มเส้นทางสำหรับ Google Login
 // router.post("/google-login", googleLogin);
 exports.default = router;
