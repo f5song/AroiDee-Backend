@@ -13,6 +13,21 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    console.log("CORS headers sent:", res.getHeaders());
+  });
+  next();
+});
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    console.log("CORS headers sent:", res.getHeaders());
+  });
+  next();
+});
+
+
 
 app.use(express.json());
 
