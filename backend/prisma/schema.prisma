@@ -24,6 +24,7 @@ model recipes {
   user               users                @relation(fields: [user_id], references: [id])
   saved_recipes      saved_recipes[]
   categories         categories[]         @relation("RecipeCategories")
+  meals              meals[]
 }
 
 model categories {
@@ -32,6 +33,7 @@ model categories {
   image_url         String?
   recipe_categories recipe_categories[]
   recipes           recipes[]           @relation("RecipeCategories")
+  meals             meals[]
 }
 
 model recipe_categories {
@@ -44,11 +46,10 @@ model recipe_categories {
 }
 
 model ingredients {
-  id                  Int                   @id @default(autoincrement())
-  name                String                @unique @db.VarChar(255)
-  unit                String                @db.VarChar(50)
-  recipe_ingredients  recipe_ingredients[]
-  shopping_list_items shopping_list_items[]
+  id                 Int                  @id @default(autoincrement())
+  name               String               @unique @db.VarChar(255)
+  unit               String               @db.VarChar(50)
+  recipe_ingredients recipe_ingredients[]
 }
 
 model nutrition_facts {
@@ -75,39 +76,19 @@ model recipe_ingredients {
   recipes       recipes?     @relation(fields: [recipe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model shopping_list_items {
-  id               Int             @id @default(autoincrement())
-  shopping_list_id Int?
-  ingredient_id    Int?
-  quantity         Decimal         @db.Decimal(10, 2)
-  purchased        Boolean?        @default(false)
-  ingredients      ingredients?    @relation(fields: [ingredient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  shopping_lists   shopping_lists? @relation(fields: [shopping_list_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model shopping_lists {
-  id                  Int                   @id @default(autoincrement())
-  user_id             Int?
-  created_at          DateTime?             @default(now()) @db.Timestamp(6)
-  shopping_list_items shopping_list_items[]
-  users               users?                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
 model users {
-  id             Int              @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   username       String
-  email          String           @unique
-  password_hash  String?          // เปลี่ยนเป็น nullable เพื่อรองรับผู้ใช้ที่ล็อกอินด้วย Google
-  created_at     DateTime         @default(now())
+  email          String    @unique
+  password_hash  String?
+  created_at     DateTime  @default(now())
   image_url      String?
-  
-  // เพิ่มฟิลด์สำหรับ Google Authentication
-  google_id      String?          @unique
-  provider       String?          // 'email', 'google', etc.
-  
+  google_id      String?   @unique
+  provider       String?   // 'email', 'google', etc.
   recipes        recipes[]
   saved_recipes  saved_recipes[]
-  shopping_lists shopping_lists[]
+  meals          meals[]
+  calories_goal Int?
 }
 
 model saved_recipes {
@@ -119,4 +100,20 @@ model saved_recipes {
   users     users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, recipe_id])
+}
+
+model meals {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  recipe_id   Int
+  date        DateTime
+  category_id Int // ใช้แทน meal_type
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user     users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  recipe   recipes    @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+  category categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, date])
 }

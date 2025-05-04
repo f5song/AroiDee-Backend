@@ -106,7 +106,8 @@ export const getUserProfile = async (
         username: true,
         email: true,
         created_at: true,
-        image_url: true, // ✅ ดึงข้อมูล image_url มาด้วย
+        image_url: true,
+        calories_goal: true,
       },
     });
 
@@ -259,7 +260,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
-// ✅ POST /api/users/upload-avatar - อัพโหลดรูปโปรไฟล์
 export const uploadAvatar = async (
   req: AuthenticatedRequest,
   res: Response
@@ -305,5 +305,27 @@ export const uploadAvatar = async (
       message: "Error uploading avatar",
       error: error.message,
     });
+  }
+};
+
+// ✅ PUT /api/users/:id/update-goals
+export const updateCalorieGoal = async (req: Request, res: Response) => {
+  const userId = Number(req.params.id);
+  const { calories_goal } = req.body;
+
+  if (typeof calories_goal !== "number" || calories_goal <= 0) {
+    return res.status(400).json({ message: "Invalid calories_goal" });
+  }
+
+  try {
+    const updatedUser = await prisma.users.update({
+      where: { id: userId },
+      data: { calories_goal },
+    });
+
+    return res.status(200).json({ success: true, user: updatedUser }); // ✅ return รูปแบบมาตรฐาน
+  } catch (error) {
+    console.error("Failed to update calories_goal:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -1,12 +1,13 @@
 import express from "express";
-import { 
-  fetchUsers, 
-  register, 
-  getUserProfile, 
-  updateUserProfile, 
-  deleteUserById, 
+import {
+  fetchUsers,
+  register,
+  getUserProfile,
+  updateUserProfile,
+  deleteUserById,
   login,
-  uploadAvatar
+  uploadAvatar,
+  updateCalorieGoal,
 } from "../controllers/user.controller";
 // import { googleLogin } from "../controllers/googleAuth.controller";
 import authMiddleware from "../middlewares/authMiddleware";
@@ -21,7 +22,7 @@ cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
+  secure: true,
 });
 
 // ตั้งค่า Multer + Cloudinary
@@ -38,14 +39,25 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// เส้นทางเดิม
 router.get("/", fetchUsers);
 router.post("/register", register);
 router.get("/profile", authMiddleware, getUserProfile);
 router.put("/update", authMiddleware, updateUserProfile);
 router.delete("/delete/:id", authMiddleware, deleteUserById);
 router.post("/login", login);
-router.post("/upload-avatar", authMiddleware, upload.single("avatar"), uploadAvatar);
+router.post(
+  "/upload-avatar",
+  authMiddleware,
+  upload.single("avatar"),
+  uploadAvatar
+);
+router.put("/:id/update-goals", async (req, res) => {
+  try {
+    await updateCalorieGoal(req, res);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating calorie goal", error });
+  }
+});
 
 // เพิ่มเส้นทางสำหรับ Google Login
 // router.post("/google-login", googleLogin);

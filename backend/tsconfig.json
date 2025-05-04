@@ -10,7 +10,7 @@
     "paths": {
       "@/*": ["./src/*"]
     }, // ไฟล์ source อยู่ในโฟลเดอร์ src
-    "typeRoots": ["./node_modules/@types", "./@types"] // ✅ บอก TypeScript ให้โหลดไฟล์ Type ที่เราเพิ่ม
+    "typeRoots": ["./src/types", "./node_modules/@types"] // ✅ บอก TypeScript ให้โหลดไฟล์ Type ที่เราเพิ่ม
   },
   "include": ["src"], // ไฟล์ที่ TypeScript จะ compile
   "exclude": ["node_modules"], // ไฟล์ที่ TypeScript จะไม่สนใจ
