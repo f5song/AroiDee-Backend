@@ -23,6 +23,7 @@ import nutritionFactsRoutes from "./routes/nutrition.routes";
 import recipesRoutes from "./routes/recipe.route";
 import usersRoutes from "./routes/user.route";
 import savedRecipesRoutes from "./routes/savedRecipes.routes";
+import mealsRouter from "./routes/meals.routes";
 
 // Prefix API
 app.use("/api/categories", categoriesRoutes);
@@ -31,6 +32,7 @@ app.use("/api/nutrition-facts", nutritionFactsRoutes);
 app.use("/api/recipes", recipesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/saved-recipes", savedRecipesRoutes);
+app.use("/api/meals", mealsRouter);
 
 // Start server
 app.listen(PORT, () => {
